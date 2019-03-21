@@ -23,6 +23,15 @@ module.exports = function(grunt) {
             }
         },
 
+        // uglify to concat, minify, and make source maps
+        uglify: {
+            dist: {
+                files: {
+                    'assets/js/charitable-braintree-handler.min.js' : 'assets/js/charitable-braintree-handler.js'
+                }
+            }
+        },
+
         // Sass
         sass: {
             dist: {

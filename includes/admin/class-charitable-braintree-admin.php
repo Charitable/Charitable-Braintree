@@ -54,7 +54,23 @@ if ( ! class_exists( 'Charitable_Braintree_Admin' ) ) :
 		 * @return string[]
 		 */
 		public function add_plugin_action_links( $links ) {
-			$links[] = '<a href="' . admin_url( 'admin.php?page=charitable-settings&tab=extensions' ) . '">' . __( 'Settings', 'charitable-newsletter-connect' ) . '</a>';
+			if ( Charitable_Gateways::get_instance()->is_active_gateway( 'braintree' ) ) {
+				$links[] = '<a href="' . admin_url( 'admin.php?page=charitable-settings&tab=gateways&group=gateways_braintree' ) . '">' . __( 'Settings', 'charitable-braintree' ) . '</a>';
+			} else {
+				$activate_url = esc_url(
+					add_query_arg(
+						array(
+							'charitable_action' => 'enable_gateway',
+							'gateway_id'        => 'braintree',
+							'_nonce'            => wp_create_nonce( 'gateway' ),
+						),
+						admin_url( 'admin.php?page=charitable-settings&tab=gateways' )
+					)
+				);
+
+				$links[] = '<a href="' . $activate_url . '">' . __( 'Activate Braintree Gateway', 'charitable-braintree' ) . '</a>';
+			}
+
 			return $links;
 		}
 
