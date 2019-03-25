@@ -175,7 +175,8 @@ if ( ! class_exists( 'Charitable_Braintree' ) ) :
 			}
 
 			require_once( $this->get_path( 'includes' ) . 'admin/class-charitable-braintree-admin.php' );
-			require_once( $this->get_path( 'includes' ) . 'admin/charitable-braintree-admin-hooks.php' );
+
+			new Charitable_Braintree_Admin();
 		}
 
 		/**

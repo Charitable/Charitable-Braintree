@@ -442,7 +442,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 					'streetAddress'     => $donor->get_donor_meta( 'address' ),
 					'extendedAddress'   => $donor->get_donor_meta( 'address_2' ),
 				],
-				//'channel'            => '',
+				'channel'            => 'Charitable_SP',
 				'customer'           => [
 					'email'     => $donor->get_donor_meta( 'email' ),
 					'firstName' => $donor->get_donor_meta( 'first_name' ),

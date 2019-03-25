@@ -24,25 +24,15 @@ if ( ! class_exists( 'Charitable_Braintree_Admin' ) ) :
 	class Charitable_Braintree_Admin {
 
 		/**
-		 * The single static class instance.
-		 *
-		 * @since 1.0.0
-		 *
-		 * @var   Charitable_Braintree_Admin
-		 */
-		private static $instance = null;
-
-		/**
-		 * Create and return the class object.
+		 * Set up class instance.
 		 *
 		 * @since 1.0.0
 		 */
-		public static function get_instance() {
-			if ( is_null( self::$instance ) ) {
-				self::$instance = new Charitable_Braintree_Admin();
-			}
-
-			return self::$instance;
+		public function __construct() {
+			/**
+			 * Add a direct link to the Extensions settings page from the plugin row.
+			 */
+			add_filter( 'plugin_action_links_' . plugin_basename( charitable_braintree()->get_path() ), array( $this, 'add_plugin_action_links' ) );
 		}
 
 		/**
@@ -72,45 +62,6 @@ if ( ! class_exists( 'Charitable_Braintree_Admin' ) ) :
 			}
 
 			return $links;
-		}
-
-		/**
-		 * Add settings to the Extensions settings tab.
-		 *
-		 * @since  1.0.0
-		 *
-		 * @param  array[] $fields Settings to display in tab.
-		 * @return array[]
-		 */
-		public function add_braintree_settings( $fields = array() ) {
-			if ( ! charitable_is_settings_view( 'extensions' ) ) {
-				return $fields;
-			}
-
-			$custom_fields = array(
-				'section_braintree' => array(
-					'title'    => __( 'Braintree', 'charitable-braintree' ),
-					'type'     => 'heading',
-					'priority' => 50,
-				),
-				'braintree_setting_text' => array(
-					'title'    => __( 'Text Field Setting', 'charitable-braintree' ),
-					'type'     => 'text',
-					'priority' => 50.2,
-					'default'  => __( '', 'charitable-braintree' ),
-				),
-				'braintree_setting_checkbox' => array(
-					'title'    => __( 'Checkbox Setting', 'charitable-braintree' ),
-					'type'     => 'checkbox',
-					'priority' => 50.6,
-					'default'  => false,
-					'help'     => __( '', 'charitable-braintree' ),
-				),
-			);
-
-			$fields = array_merge( $fields, $custom_fields );
-
-			return $fields;
 		}
 	}
 
