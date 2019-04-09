@@ -129,6 +129,33 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 				]
 			);
 
+			if ( class_exists( 'Charitable_Recurring' ) ) {
+				$settings = array_merge(
+					$settings,
+					[
+						'section_recurring_billing' => [
+							'title'    => __( 'Recurring Billing', 'charitable-braintree' ),
+							'type'     => 'heading',
+							'priority' => 15,
+						],
+						'default_live_plan'         => [
+							'type'     => 'select',
+							'title'    => __( 'Default Live Plan', 'charitable-braintree' ),
+							'priority' => 16,
+							'options'  => $this->get_plans( false ),
+							'help'     => __( 'Select a default plan to use for any subscriptions created by Charitable. You can override this on a per-campaign basis.', 'charitable-braintree' ),
+						],
+						'default_test_plan'         => [
+							'type'     => 'select',
+							'title'    => __( 'Default Test Plan', 'charitable-braintree' ),
+							'priority' => 16,
+							'options'  => $this->get_plans( true ),
+							'help'     => __( 'Select a default plan to use for any subscriptions created by Charitable. You can override this on a per-campaign basis.', 'charitable-braintree' ),
+						],
+					]
+				);
+			}
+
 			if ( 'missing_endpoint' == $this->get_value( 'webhook_endpoint_status' ) ) {
 				$settings['missing_webhook_endpoint'] = [
 					'type'     => 'inline-notice',
@@ -286,7 +313,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 *                                 will use the current site Test Mode setting.
 		 * @param  array        $keys      If set, will use these keys for getting the
 		 *                                 instance. Otherwise, will use get_keys().
-		 * @return Braintree_Gateway
+		 * @return Braintree_Gateway|false Braintree_Gateway instance if keys are set. False otherwise.
 		 */
 		public function get_gateway_instance( $test_mode = null, $keys = [] ) {
 			if ( is_null( $test_mode ) ) {
@@ -295,6 +322,10 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 
 			if ( empty( $keys ) ) {
 				$keys = $this->get_keys( $test_mode );
+			}
+
+			if ( empty( $keys['merchant_id'] ) || empty( $keys['public_key'] ) || empty( $keys['private_key'] ) ) {
+				return false;
 			}
 
 			return new Braintree_Gateway(
@@ -316,11 +347,16 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 *                                 will use the current site Test Mode setting.
 		 * @param  array        $keys      If set, will use these keys for getting the
 		 *                                 instance. Otherwise, will use get_keys().
-		 * @return string
+		 * @return string|false Returns false if one or more keys are empty.
 		 */
 		public function get_client_token( $test_mode = null, $keys = [] ) {
 			$braintree = $this->get_gateway_instance( $test_mode, $keys );
-			$args    = [];
+
+			if ( ! $braintree ) {
+				return false;
+			}
+
+			$args = [];
 
 			if ( is_user_logged_in() ) {
 				// $args['customerId'] = get_current_user_id();
@@ -413,6 +449,10 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 			$gateway   = new Charitable_Gateway_Braintree();
 			$keys      = $gateway->get_keys();
 			$braintree = $gateway->get_gateway_instance( null, $keys );
+
+			if ( ! $braintree ) {
+				return false;
+			}
 
 			$donation = charitable_get_donation( $donation_id );
 			$donor    = $donation->get_donor();
@@ -542,6 +582,39 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 			 * @param Charitable_Donation_Processor $processor  The processor object.
 			 */
 			return apply_filters( 'charitable_braintree_statement_descriptor', substr( $donation->get_campaigns_donated_to(), 0, 22 ), $donation, $processor );
+		}
+
+		/**
+		 * Return Braintree plans as a list of options.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  boolean $test_mode Whether to get the test or live plans.
+		 * @return array
+		 */
+		public function get_plans( $test_mode ) {
+			$options   = [
+				'' => __( 'Select a default plan', 'charitable-braintree' ),
+			];
+			$braintree = $this->get_gateway_instance( $test_mode );
+
+			/* We're missing keys, so return empty options. */
+			if ( ! $braintree ) {
+				return $options;
+			}
+
+			try {
+				foreach ( $braintree->plan()->all() as $plan ) {
+					$options[ $plan->id ] = $plan->name;
+				}
+			} catch ( Exception $e ) {
+				if ( defined( 'CHARITABLE_DEBUG' ) && CHARITABLE_DEBUG ) {
+					error_log( get_class( $e ) );
+					error_log( $e->getMessage() . ' [' . $e->getCode() . ']' );
+				}
+			}
+
+			return $options;
 		}
 
 		/**
