@@ -77,59 +77,66 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 * @return array[]
 		 */
 		public function gateway_settings( $settings ) {
-			$settings['section_live_mode'] = array(
-				'title'    => __( 'Live Mode Settings', 'charitable-braintree' ),
-				'type'     => 'heading',
-				'priority' => 4,
+			$settings = array_merge(
+				$settings,
+				[
+					'section_live_mode' => [
+						'title'    => __( 'Live Mode Settings', 'charitable-braintree' ),
+						'type'     => 'heading',
+						'priority' => 4,
+					],
+					'live_merchant_id'  => [
+						'type'     => 'text',
+						'title'    => __( 'Live Merchant ID', 'charitable-braintree' ),
+						'priority' => 5,
+						'class'    => 'wide',
+					],
+					'live_public_key'   => [
+						'type'     => 'text',
+						'title'    => __( 'Live Public Key', 'charitable-braintree' ),
+						'priority' => 6,
+						'class'    => 'wide',
+					],
+					'live_private_key'  => [
+						'type'     => 'password',
+						'title'    => __( 'Live Private Key', 'charitable-braintree' ),
+						'priority' => 7,
+						'class'    => 'wide',
+					],
+					'section_test_mode' => [
+						'title'    => __( 'Test Mode Settings', 'charitable-braintree' ),
+						'type'     => 'heading',
+						'priority' => 10,
+					],
+					'test_merchant_id'  => [
+						'type'     => 'text',
+						'title'    => __( 'Test Merchant ID', 'charitable-braintree' ),
+						'priority' => 11,
+						'class'    => 'wide',
+					],
+					'test_public_key'   => [
+						'type'     => 'text',
+						'title'    => __( 'Test Public Key', 'charitable-braintree' ),
+						'priority' => 12,
+						'class'    => 'wide',
+					],
+					'test_private_key'  => [
+						'type'     => 'password',
+						'title'    => __( 'Test Private Key', 'charitable-braintree' ),
+						'priority' => 13,
+						'class'    => 'wide',
+					],
+				]
 			);
 
-			$settings['live_merchant_id'] = array(
-				'type'     => 'text',
-				'title'    => __( 'Live Merchant ID', 'charitable-braintree' ),
-				'priority' => 5,
-				'class'    => 'wide',
-			);
-
-			$settings['live_public_key'] = array(
-				'type'     => 'text',
-				'title'    => __( 'Live Public Key', 'charitable-braintree' ),
-				'priority' => 6,
-				'class'    => 'wide',
-			);
-
-			$settings['live_private_key'] = array(
-				'type'     => 'text',
-				'title'    => __( 'Live Private Key', 'charitable-braintree' ),
-				'priority' => 7,
-				'class'    => 'wide',
-			);
-
-			$settings['section_test_mode'] = array(
-				'title'    => __( 'Test Mode Settings', 'charitable-braintree' ),
-				'type'     => 'heading',
-				'priority' => 10,
-			);
-
-			$settings['test_merchant_id'] = array(
-				'type'     => 'text',
-				'title'    => __( 'Test Merchant ID', 'charitable-braintree' ),
-				'priority' => 11,
-				'class'    => 'wide',
-			);
-
-			$settings['test_public_key'] = array(
-				'type'     => 'text',
-				'title'    => __( 'Test Public Key', 'charitable-braintree' ),
-				'priority' => 12,
-				'class'    => 'wide',
-			);
-
-			$settings['test_private_key'] = array(
-				'type'     => 'text',
-				'title'    => __( 'Test Private Key', 'charitable-braintree' ),
-				'priority' => 13,
-				'class'    => 'wide',
-			);
+			if ( 'missing_endpoint' == $this->get_value( 'webhook_endpoint_status' ) ) {
+				$settings['missing_webhook_endpoint'] = [
+					'type'     => 'inline-notice',
+					'save'     => false,
+					'content'  => __( '<p>Charitable has not detected any incoming webhooks from Braintree. <a href="#">Have you added your webhook and sent a test notification?</a></p>', 'charitable-braintree' ),
+					'priority' => 3,
+				];
+			}
 
 			return $settings;
 		}

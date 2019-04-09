@@ -52,6 +52,8 @@ if ( ! class_exists( 'Charitable_Braintree_Webhook_Processor' ) ) :
 		public function __construct( $webhook ) {
 			$this->webhook = $webhook;
 			$this->gateway = new Charitable_Gateway_Braintree();
+
+			$this->mark_endpoint_as_active();
 		}
 
 		/**
@@ -64,6 +66,8 @@ if ( ! class_exists( 'Charitable_Braintree_Webhook_Processor' ) ) :
 		public static function process() {
 			/* Retrieve and validate the request's body. */
 			$webhook = self::get_validated_incoming_event();
+
+			error_log( var_export( $webhook, true ) );
 
 			if ( ! $webhook ) {
 				status_header( 500 );
@@ -137,6 +141,21 @@ if ( ! class_exists( 'Charitable_Braintree_Webhook_Processor' ) ) :
 		}
 
 		/**
+		 * When a webhook is received, mark the endpoint as active.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @return void
+		 */
+		private function mark_endpoint_as_active() {
+			if ( 'active' != $this->gateway->get_value( 'webhook_endpoint_status' ) ) {
+				$settings = get_option( 'charitable_settings' );
+				$settings['gateways_braintree']['webhook_endpoint_status'] = 'active';
+				update_option( 'charitable_settings', $settings );
+			}
+		}
+
+		/**
 		 * For an IPN request, get the validated incoming event object.
 		 *
 		 * @since  1.0.0
@@ -144,13 +163,14 @@ if ( ! class_exists( 'Charitable_Braintree_Webhook_Processor' ) ) :
 		 * @return false|?
 		 */
 		private static function get_validated_incoming_event() {
-			$payload = file_get_contents( 'php://input' );
-
-			if ( empty( $payload ) ) {
+			if ( ! array_key_exists( 'bt_signature', $_POST ) || ! array_key_exists( 'bt_payload', $_POST ) ) {
 				return false;
 			}
 
-			return $payload;
+			$gateway   = new Charitable_Gateway_Braintree;
+			$braintree = $gateway->get_gateway_instance();
+
+			return $braintree->webhookNotification()->parse( $_POST['bt_signature'], $_POST['bt_payload'] );
 		}
 	}
 
