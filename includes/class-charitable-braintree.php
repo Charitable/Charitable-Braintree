@@ -152,6 +152,12 @@ if ( ! class_exists( 'Charitable_Braintree' ) ) :
 			/* Vendor autoload */
 			require_once( $this->get_path( 'directory' ) . 'vendor/autoload.php' );
 
+			/* Interfaces */
+			require_once( $includes_dir . 'interfaces/interface-charitable-braintree-gateway-processor.php' );
+
+			/* Abstracts */
+			require_once( $includes_dir . 'abstracts/class-charitable-braintree-gateway-processor.php' );
+
 			/* Core */
 			require_once( $includes_dir . 'charitable-braintree-core-functions.php' );
 
@@ -162,6 +168,8 @@ if ( ! class_exists( 'Charitable_Braintree' ) ) :
 			require_once( $includes_dir . 'fields/class-charitable-braintree-fields.php' );
 
 			/* Gateways */
+			require_once( $includes_dir . 'gateway/class-charitable-braintree-gateway-processor-one-time.php' );
+			require_once( $includes_dir . 'gateway/class-charitable-braintree-gateway-processor-recurring.php' );
 			require_once( $includes_dir . 'gateway/class-charitable-braintree-webhook-processor.php' );
 			require_once( $includes_dir . 'gateway/class-charitable-gateway-braintree.php' );
 			require_once( $includes_dir . 'gateway/charitable-braintree-gateway-hooks.php' );

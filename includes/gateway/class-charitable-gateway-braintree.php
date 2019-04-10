@@ -366,32 +366,6 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		}
 
 		/**
-		 * Return the submitted value for a gateway field.
-		 *
-		 * @since  1.0.0
-		 *
-		 * @param  string  $key    The key of the field to get.
-		 * @param  mixed[] $values Set of values to find the values in.
-		 * @return string|false
-		 */
-		public function get_gateway_value( $key, $values ) {
-			return isset( $values['gateways']['braintree'][ $key ] ) ? $values['gateways']['braintree'][ $key ] : false;
-		}
-
-		/**
-		 * Return the submitted value for a gateway field.
-		 *
-		 * @since  1.0.0
-		 *
-		 * @param  string                        $key       The key of the field to get.
-		 * @param  Charitable_Donation_Processor $processor Donation processor object.
-		 * @return string|false
-		 */
-		public function get_gateway_value_from_processor( $key, Charitable_Donation_Processor $processor ) {
-			return $this->get_gateway_value( $key, $processor->get_donation_data() );
-		}
-
-		/**
 		 * Validate the submitted credit card details.
 		 *
 		 * @since  1.0.0
@@ -436,6 +410,18 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		}
 
 		/**
+		 * Checks whether the donation being processed is recurring.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  Charitable_Donation_Processor $processor The Donation Processor helper.
+		 * @return boolean
+		 */
+		public static function is_recurring_donation( Charitable_Donation_Processor $processor ) {
+			return $processor->get_donation_data_value( 'donation_plan', false );
+		}
+
+		/**
 		 * Process the donation with the gateway.
 		 *
 		 * @since  1.0.0
@@ -446,142 +432,36 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 * @return boolean|array
 		 */
 		public static function process_donation( $return, $donation_id, $processor ) {
-			$gateway   = new Charitable_Gateway_Braintree();
-			$keys      = $gateway->get_keys();
-			$braintree = $gateway->get_gateway_instance( null, $keys );
-
-			if ( ! $braintree ) {
-				return false;
+			if ( self::is_recurring_donation( $processor ) ) {
+				/**
+				 * Filter the processor used for handling recurring donations.
+				 *
+				 * @since 1.3.0
+				 *
+				 * @param string                        $class     The name of the Braintree gateway processor class.
+				 * @param Charitable_Donation_Processor $processor The Donation Processor helper.
+				 */
+				$processor_class = apply_filters( 'charitable_braintree_gateway_processor_recurring', 'Charitable_Braintree_Gateway_Processor_Recurring', $processor );
+			} else {
+				/**
+				 * Filter the processor used for handling one time donations.
+				 *
+				 * @since 1.3.0
+				 *
+				 * @param string                        $class     The name of the Braintree gateway processor class.
+				 * @param Charitable_Donation_Processor $processor The Donation Processor helper.
+				 */
+				$processor_class = apply_filters( 'charitable_braintree_gateway_processor_one_time', 'Charitable_Braintree_Gateway_Processor_One_Time', $processor );
 			}
 
-			$donation = charitable_get_donation( $donation_id );
-			$donor    = $donation->get_donor();
-			// $values   = $processor->get_donation_data();
+			$gateway_processor = new $processor_class( $donation_id, $processor );
 
-			// $address          = $donor->get_donor_meta( 'address' );
-			// $extended_address = $donor->get_donor_meta( 'address_2' );
-
-			// if ( ! empty( $extended_address ) ) {
-			// 	$_address         = $address;
-			// 	$address          = $extended_address;
-			// 	$extended_address = $_address;
-			// }
-
-			$url_parts = parse_url( home_url() );
-
-			/**
-			 * Prepare sale transaction data.
-			 */
-			$transaction_data = [
-				'amount'             => number_format( $donation->get_total_donation_amount( true ), 2 ),
-				'orderId'            => (string) $donation->get_donation_id(),
-				'paymentMethodNonce' => $gateway->get_gateway_value_from_processor( 'token', $processor ),
-				'options'            => [
-					'submitForSettlement' => true,
-				],
-				'billing'            => [
-					'countryCodeAlpha2' => $donor->get_donor_meta( 'country' ),
-					'firstName'         => $donor->get_donor_meta( 'first_name' ),
-					'lastName'          => $donor->get_donor_meta( 'last_name' ),
-					'locality'          => $donor->get_donor_meta( 'city' ),
-					'postalCode'        => $donor->get_donor_meta( 'postcode' ),
-					'region'            => $donor->get_donor_meta( 'state' ),
-					'streetAddress'     => $donor->get_donor_meta( 'address' ),
-					'extendedAddress'   => $donor->get_donor_meta( 'address_2' ),
-				],
-				'channel'            => 'Charitable_SP',
-				'customer'           => [
-					'email'     => $donor->get_donor_meta( 'email' ),
-					'firstName' => $donor->get_donor_meta( 'first_name' ),
-					'lastName'  => $donor->get_donor_meta( 'last_name' ),
-					'phone'     => $donor->get_donor_meta( 'phone' ),
-				],
-				'descriptor'         => [
-					'name' => substr(
-						sprintf( '%s*%s', get_option( 'blogname' ), $donation->get_campaigns_donated_to() ),
-						0,
-						18
-					),
-					'url'  => substr( $url_parts['host'], 0, 13 ),
-				],
-				'lineItems'          => [],
-				// 'merchantAccountId'  => $keys['merchant_id'],
-			];
-
-			foreach ( $donation->get_campaign_donations() as $campaign_donation ) {
-				$amount = Charitable_Currency::get_instance()->sanitize_monetary_amount( (string) $campaign_donation->amount, true );
-
-				$transaction_data['lineItems'][] = [
-					'kind'        => 'debit',
-					'name'        => $campaign_donation->campaign_name,
-					'productCode' => $campaign_donation->campaign_id,
-					'quantity'    => 1,
-					'totalAmount' => $amount,
-					'unitAmount'  => $amount,
-					'url'         => get_permalink( $campaign_donation->campaign_id ),
-				];
+			/* Ensure we have a valid processor. */
+			if ( ! $gateway_processor instanceof Charitable_Braintree_Gateway_Processor ) {
+				$gateway_processor = new Charitable_Braintree_Gateway_Processor_One_Time( $donation_id, $processor );
 			}
 
-			error_log( var_export( $transaction_data, true ) );
-
-			/**
-			 * Create sale transaction in Braintree.
-			 */
-			try {
-				$result = $braintree->transaction()->sale( $transaction_data );
-
-				if ( ! $result->success ) {
-					error_log( var_export( $result->errors->deepAll(), true ) );
-					charitable_get_notices()->add_error( __( 'Donation not processed successfully in payment gateway.', 'charitable-braintree' ) );
-					return false;
-				}
-
-				$transaction_url = sprintf(
-					'https://%sbraintreegateway.com/merchants/%s/transactions/%s',
-					charitable_get_option( 'test_mode' ) ? 'sandbox.' : '',
-					$keys['merchant_id'],
-					$result->transaction->id
-				);
-
-				$donation->log()->add(
-					sprintf(
-						/* translators: %s: link to Braintree transaction details */
-						__( 'Braintree transaction: %s', 'charitable-braintree' ),
-						'<a href="' . $transaction_url . '" target="_blank"><code>' . $result->transaction->id . '</code></a>'
-					)
-				);
-
-				$donation->set_gateway_transaction_id( $result->transaction->id );
-
-				$donation->update_status( 'charitable-completed' );
-
-				return true;
-
-			} catch ( Exception $e ) {
-				error_log( get_class( $e ) );
-				error_log( $e->getMessage() . ' [' . $e->getCode() . ']' );
-				return false;
-			}
-		}
-
-		/**
-		 * Return the statement_descriptor value.
-		 *
-		 * @since  1.0.0
-		 *
-		 * @return string
-		 */
-		public function get_statement_descriptor( Charitable_Donation $donation, Charitable_Donation_Processor $processor ) {
-			/**
-			 * Filter the statement_descriptor.
-			 *
-			 * @since 1.0.0
-			 *
-			 * @param string                        $descriptor The default descriptor.
-			 * @param Charitable_Donation           $donation   The donation object.
-			 * @param Charitable_Donation_Processor $processor  The processor object.
-			 */
-			return apply_filters( 'charitable_braintree_statement_descriptor', substr( $donation->get_campaigns_donated_to(), 0, 22 ), $donation, $processor );
+			return $gateway_processor->run();
 		}
 
 		/**
@@ -614,21 +494,6 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 			}
 
 			return $options;
-		}
-
-		/**
-		 * Process an IPN request.
-		 *
-		 * @since  1.0.0
-		 *
-		 * @return void
-		 */
-		public static function process_ipn() {
-			/**
-			 * Process the IPN.
-			 *
-			 * @todo
-			 */
 		}
 	}
 
