@@ -142,14 +142,14 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 							'type'     => 'select',
 							'title'    => __( 'Default Live Plan', 'charitable-braintree' ),
 							'priority' => 16,
-							'options'  => $this->get_plans( false ),
+							'options'  => $this->get_plans( false, __( 'Select a default plan', 'charitable-braintree' ) ),
 							'help'     => __( 'Select a default plan to use for any subscriptions created by Charitable. You can override this on a per-campaign basis.', 'charitable-braintree' ),
 						],
 						'default_test_plan'         => [
 							'type'     => 'select',
 							'title'    => __( 'Default Test Plan', 'charitable-braintree' ),
 							'priority' => 16,
-							'options'  => $this->get_plans( true ),
+							'options'  => $this->get_plans( true, __( 'Select a default plan', 'charitable-braintree' ) ),
 							'help'     => __( 'Select a default plan to use for any subscriptions created by Charitable. You can override this on a per-campaign basis.', 'charitable-braintree' ),
 						],
 					]
@@ -589,13 +589,12 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 *
 		 * @since  1.0.0
 		 *
-		 * @param  boolean $test_mode Whether to get the test or live plans.
+		 * @param  boolean $test_mode      Whether to get the test or live plans.
+		 * @param  string  $default_choice Text to go along with default choice.
 		 * @return array
 		 */
-		public function get_plans( $test_mode ) {
-			$options   = [
-				'' => __( 'Select a default plan', 'charitable-braintree' ),
-			];
+		public function get_plans( $test_mode, $default_choice = '' ) {
+			$options   = empty( $default_choice ) ? [] : [ '' => $default_choice ];
 			$braintree = $this->get_gateway_instance( $test_mode );
 
 			/* We're missing keys, so return empty options. */

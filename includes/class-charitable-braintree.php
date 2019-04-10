@@ -125,6 +125,11 @@ if ( ! class_exists( 'Charitable_Braintree' ) ) :
 			$this->attach_hooks_and_filters();
 
 			/**
+			 * Init classes that need to be started.
+			 */
+			new Charitable_Braintree_Fields();
+
+			/**
 			 * Do something when the plugin is first started.
 			 *
 			 * @since 1.0.0
@@ -152,6 +157,9 @@ if ( ! class_exists( 'Charitable_Braintree' ) ) :
 
 			/* Deprecated */
 			require_once( $includes_dir . 'deprecated/class-charitable-braintree-deprecated.php' );
+
+			/* Fields */
+			require_once( $includes_dir . 'fields/class-charitable-braintree-fields.php' );
 
 			/* Gateways */
 			require_once( $includes_dir . 'gateway/class-charitable-braintree-webhook-processor.php' );
