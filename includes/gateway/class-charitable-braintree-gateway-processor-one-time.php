@@ -51,6 +51,15 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 			}
 
 			/**
+			 * Create a payment method in the Vault, adding it to the customer.
+			 */
+			$payment_method = $this->create_payment_method( $customer_id );
+
+			if ( ! $payment_method ) {
+				return false;
+			}
+
+			/**
 			 * Prepare sale transaction data.
 			 */
 			$transaction_data = [

@@ -25,6 +25,29 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 	class Charitable_Braintree_Gateway_Processor_Recurring extends Charitable_Braintree_Gateway_Processor implements Charitable_Braintree_Gateway_Processor_Interface {
 
 		/**
+		 * Recurring donation object.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @var   Charitable_Recurring_Donation
+		 */
+		private $recurring;
+
+		/**
+		 * Set up class instance.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param int                           $donation_id The donation ID.
+		 * @param Charitable_Donation_Processor $processor   The donation processor object.
+		 */
+		public function __construct( $donation_id, Charitable_Donation_Processor $processor ) {
+			parent::__construct( $donation_id, $processor );
+
+			$this->recurring = charitable_get_donation( $processor->get_donation_data_value( 'donation_plan' ) );
+		}
+
+		/**
 		 * Run the processor.
 		 *
 		 * @since  1.0.0
@@ -32,10 +55,10 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 		 * @return boolean
 		 */
 		public function run() {
-			$keys      = $this->gateway->get_keys();
-			$braintree = $this->gateway->get_gateway_instance( null, $keys );
+			$keys            = $this->gateway->get_keys();
+			$this->braintree = $this->gateway->get_gateway_instance( null, $keys );
 
-			if ( ! $braintree ) {
+			if ( ! $this->braintree ) {
 				return false;
 			}
 
@@ -51,7 +74,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 			/**
 			 * Create a payment method in the Vault, adding it to the customer.
 			 */
-			$payment_method = $this->create_payment_method();
+			$payment_method = $this->create_payment_method( $customer_id );
 
 			if ( ! $payment_method ) {
 				return false;
@@ -96,23 +119,65 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 				$data = apply_filters(
 					'charitable_braintree_subscription_data',
 					[
+						'planId'             => $plan_id,
 						'paymentMethodToken' => $payment_method,
 						'descriptor'         => [
 							'name' => substr(
-								sprintf( '%s*%s', get_option( 'blogname' ), implode( ',' $details['campaigns'] ) ),
+								sprintf(
+									'%s*%s',
+									get_option( 'blogname' ),
+									implode( ',', $details['campaigns'] )
+								),
 								0,
 								18
 							),
 							'url'  => substr( $url_parts['host'], 0, 13 ),
 						],
 					]
-				)
+				);
 
 				try {
-					$subscription = $braintree->subscription()->create( $data );
+					$result = $this->braintree->subscription()->create( $data );
+					error_log( var_export( $result, true ) );
+
+					if ( ! $result->success ) {
+						error_log( var_export( $result->errors->deepAll(), true ) );
+						charitable_get_notices()->add_error( __( 'Subscription not processed successfully in payment gateway.', 'charitable-braintree' ) );
+						return false;
+					}
+
+					$subscription_url = sprintf(
+						'https://%sbraintreegateway.com/merchants/%s/subscriptions/%s',
+						charitable_get_option( 'test_mode' ) ? 'sandbox.' : '',
+						$keys['merchant_id'],
+						$result->subscription->id
+					);
+
+					$this->recurring->log()->add(
+						sprintf(
+							/* translators: %s: link to Braintree subscription details */
+							__( 'Braintree subscription: %s', 'charitable-braintree' ),
+							'<a href="' . $subscription_url . '" target="_blank"><code>' . $result->subscription->id . '</code></a>'
+						)
+					);
+
+					$this->recurring->set_gateway_subscription_id( $result->subscription->id );
+
+					if ( 'Active' == $result->subscription->status ) {
+						$this->recurring->update_status( 'charitable-active' );
+					}
+
+					return true;
+
+				} catch ( Exception $e ) {
+					if ( defined( 'CHARITABLE_DEBUG' ) && CHARITABLE_DEBUG ) {
+						error_log( get_class( $e ) );
+						error_log( $e->getMessage() . ' [' . $e->getCode() . ']' );
+					}
+
+					return false;
+
 				}
-
-
 			}
 
 			/**
@@ -164,7 +229,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 			 * Create sale transaction in Braintree.
 			 */
 			try {
-				$result = $braintree->transaction()->sale( $transaction_data );
+				$result = $this->braintree->transaction()->sale( $transaction_data );
 
 				if ( ! $result->success ) {
 					error_log( var_export( $result->errors->deepAll(), true ) );

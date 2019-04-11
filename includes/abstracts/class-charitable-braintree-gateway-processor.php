@@ -158,25 +158,10 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 			$data = apply_filters(
 				'charitable_braintree_customer_data',
 				[
-					'email'              => $this->donor->get_donor_meta( 'email' ),
-					'firstName'          => $this->donor->get_donor_meta( 'first_name' ),
-					'lastName'           => $this->donor->get_donor_meta( 'last_name' ),
-					'phone'              => $this->donor->get_donor_meta( 'phone' ),
-					'paymentMethodNonce' => $this->get_gateway_value_from_processor( 'token' ),
-					'creditCard'         => [
-						'billingAddress' => [
-							'firstName'         => $this->donor->get_donor_meta( 'first_name' ),
-							'lastName'          => $this->donor->get_donor_meta( 'last_name' ),
-							'countryCodeAlpha2' => $this->donor->get_donor_meta( 'country' ),
-							'firstName'         => $this->donor->get_donor_meta( 'first_name' ),
-							'lastName'          => $this->donor->get_donor_meta( 'last_name' ),
-							'locality'          => $this->donor->get_donor_meta( 'city' ),
-							'postalCode'        => $this->donor->get_donor_meta( 'postcode' ),
-							'region'            => $this->donor->get_donor_meta( 'state' ),
-							'streetAddress'     => $this->donor->get_donor_meta( 'address' ),
-							'extendedAddress'   => $this->donor->get_donor_meta( 'address_2' ),
-						],
-					],
+					'email'     => $this->donor->get_donor_meta( 'email' ),
+					'firstName' => $this->donor->get_donor_meta( 'first_name' ),
+					'lastName'  => $this->donor->get_donor_meta( 'last_name' ),
+					'phone'     => $this->donor->get_donor_meta( 'phone' ),
 				],
 				$this
 			);
@@ -197,51 +182,49 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 		}
 
 		/**
-		 * Create a new customer in Braintree.
+		 * Create a new payment method in Braintree.
 		 *
 		 * @since  1.0.0
 		 *
-		 * @return string|false Customer id if successful.
+		 * @param  string $customer_id The customer id.
+		 * @return string|false Payment method id if successful.
 		 */
-		public function create_customer() {
+		public function create_payment_method( $customer_id ) {
 			/**
-			 * Filter customer data.
+			 * Filter payment method data.
 			 *
 			 * @since 1.0.0
 			 *
-			 * @param array                                  $data      Customer data.
+			 * @param array                                  $data      Payment method data.
 			 * @param Charitable_Braintree_Gateway_Processor $processor This instance of `Charitable_Braintree_Gateway_Processor`.
 			 */
 			$data = apply_filters(
-				'charitable_braintree_customer_data',
+				'charitable_braintree_payment_method_data',
 				[
-					'email'              => $this->donor->get_donor_meta( 'email' ),
-					'firstName'          => $this->donor->get_donor_meta( 'first_name' ),
-					'lastName'           => $this->donor->get_donor_meta( 'last_name' ),
-					'phone'              => $this->donor->get_donor_meta( 'phone' ),
+					'customerId'         => $customer_id,
 					'paymentMethodNonce' => $this->get_gateway_value_from_processor( 'token' ),
-					'creditCard'         => [
-						'billingAddress' => [
-							'firstName'         => $this->donor->get_donor_meta( 'first_name' ),
-							'lastName'          => $this->donor->get_donor_meta( 'last_name' ),
-							'countryCodeAlpha2' => $this->donor->get_donor_meta( 'country' ),
-							'firstName'         => $this->donor->get_donor_meta( 'first_name' ),
-							'lastName'          => $this->donor->get_donor_meta( 'last_name' ),
-							'locality'          => $this->donor->get_donor_meta( 'city' ),
-							'postalCode'        => $this->donor->get_donor_meta( 'postcode' ),
-							'region'            => $this->donor->get_donor_meta( 'state' ),
-							'streetAddress'     => $this->donor->get_donor_meta( 'address' ),
-							'extendedAddress'   => $this->donor->get_donor_meta( 'address_2' ),
-						],
+					'billingAddress'     => [
+						'firstName'         => $this->donor->get_donor_meta( 'first_name' ),
+						'lastName'          => $this->donor->get_donor_meta( 'last_name' ),
+						'countryCodeAlpha2' => $this->donor->get_donor_meta( 'country' ),
+						'firstName'         => $this->donor->get_donor_meta( 'first_name' ),
+						'lastName'          => $this->donor->get_donor_meta( 'last_name' ),
+						'locality'          => $this->donor->get_donor_meta( 'city' ),
+						'postalCode'        => $this->donor->get_donor_meta( 'postcode' ),
+						'region'            => $this->donor->get_donor_meta( 'state' ),
+						'streetAddress'     => $this->donor->get_donor_meta( 'address' ),
+						'extendedAddress'   => $this->donor->get_donor_meta( 'address_2' ),
 					],
 				],
 				$this
 			);
 
 			try {
-				$result = $this->braintree->customer()->create( $data );
+				$result = $this->braintree->paymentMethod()->create( $data );
 
-				return $result->success ? $result->customer->id : false;
+				error_log( var_export( $result, true ) );
+
+				return $result->success ? $result->paymentMethod->token : false;
 
 			} catch ( Exception $e ) {
 				if ( defined( 'CHARITABLE_DEBUG' ) && CHARITABLE_DEBUG ) {
