@@ -62,3 +62,10 @@ add_filter( 'charitable_donation_form_submission_values', array( 'Charitable_Gat
  * @see Charitable_Gateway_Braintree::process_donation()
  */
 add_filter( 'charitable_process_donation_braintree', array( 'Charitable_Gateway_Braintree', 'process_donation' ), 10, 3 );
+
+/**
+ * Set up webhook handling.
+ *
+ * @see Charitable_Braintree_Webhook_Processor::process()
+ */
+add_action( 'charitable_process_ipn_braintree', array( 'Charitable_Braintree_Webhook_Processor', 'process' ) );
