@@ -592,7 +592,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 
 			$private_key = $donation->get_test_mode( false ) ? 'test_private_key' : 'live_private_key';
 
-			if ( ! $this->get_value( $private_key ) ) {
+			if ( ! charitable_get_option( 'gateways_braintree', $private_key ) ) {
 				return false;
 			}
 
