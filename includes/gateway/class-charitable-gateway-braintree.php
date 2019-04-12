@@ -48,7 +48,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 			);
 
 			$this->supports = array(
-				'1.3.0',
+				'1.0.0',
 				'recurring',
 				'refunds',
 			);
@@ -438,7 +438,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 				/**
 				 * Filter the processor used for handling recurring donations.
 				 *
-				 * @since 1.3.0
+				 * @since 1.0.0
 				 *
 				 * @param string                        $class     The name of the Braintree gateway processor class.
 				 * @param Charitable_Donation_Processor $processor The Donation Processor helper.
@@ -448,7 +448,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 				/**
 				 * Filter the processor used for handling one time donations.
 				 *
-				 * @since 1.3.0
+				 * @since 1.0.0
 				 *
 				 * @param string                        $class     The name of the Braintree gateway processor class.
 				 * @param Charitable_Donation_Processor $processor The Donation Processor helper.
@@ -507,9 +507,9 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 * @return boolean
 		 */
 		public function is_donation_refundable( Charitable_Donation $donation ) {
-			$secret_key = $donation->get_test_mode( false ) ? 'test_private_key' : 'live_private_key';
+			$private_key = $donation->get_test_mode( false ) ? 'test_private_key' : 'live_private_key';
 
-			if ( ! $this->get_value( $secret_key ) ) {
+			if ( ! $this->get_value( $private_key ) ) {
 				return false;
 			}
 
@@ -574,7 +574,73 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 
 				return false;
 			}
+		}
 
+		/**
+		 * Check whether a recurring donation can be cancelled automatically in Braintree.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  boolean                       $can_cancel Whether the subscription can be cancelled.
+		 * @param  Charitable_Recurring_Donation $donation The donation object.
+		 * @return boolean
+		 */
+		public static function is_subscription_cancellable( $can_cancel, Charitable_Recurring_Donation $donation ) {
+			if ( ! $can_cancel ) {
+				return $can_cancel;
+			}
+
+			$private_key = $donation->get_test_mode( false ) ? 'test_private_key' : 'live_private_key';
+
+			if ( ! $this->get_value( $private_key ) ) {
+				return false;
+			}
+
+			return ! empty( $donation->get_gateway_subscription_id() );
+		}
+
+		/**
+		 * Cancel a subscription.
+		 *
+		 * This can be triggered via the WordPress dashboard when editing a recurring
+		 * donation, or via the user's own account area.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  boolean                       $cancelled Whether the subscription was cancelled successfully in the gateway.
+		 * @param  Charitable_Recurring_Donation $donation  The recurring donation object.
+		 * @return boolean
+		 */
+		public static function cancel_subscription( $cancelled, Charitable_Recurring_Donation $donation ) {
+			$subscription_id = $donation->get_gateway_subscription_id();
+
+			if ( ! $subscription_id ) {
+				return false;
+			}
+
+			$gateway   = new Charitable_Gateway_Braintree();
+			$braintree = $gateway->get_gateway_instance( $donation->get_test_mode( false ) );
+
+			try {
+				$braintree->subscription()->cancel( $subscription_id );
+
+				$donation->log()->add( __( 'Subscription cancelled in Braintree.', 'charitable-braintree' ) );
+
+				$cancelled = true;
+			} catch ( Exception $e ) {
+				$donation->log()->add(
+					sprintf(
+						/* translators: %s: error message */
+						__( 'Braintree cancellation failed: %1$s [%2$s]', 'charitable-braintree' ),
+						$e->getMessage(),
+						$e->getCode()
+					)
+				);
+
+				$cancelled = false;
+			} finally {
+				return $cancelled;
+			}
 		}
 	}
 
