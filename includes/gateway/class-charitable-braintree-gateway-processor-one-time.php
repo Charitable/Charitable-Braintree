@@ -71,7 +71,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 				],
 				'channel'    => 'Charitable_SP',
 				'descriptor' => [
-					'name' => substr( 
+					'name' => substr(
 						sprintf(
 							'%s*%s',
 							get_option( 'blogname' ),

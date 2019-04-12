@@ -11,7 +11,7 @@ namespace Braintree;
  * PHP Version 5
  *
  * @package   Braintree
- * 
+ *
  * @property-read \Braintree\Addon[] $addOns
  * @property-read string $balance
  * @property-read int $billingDayOfMonth

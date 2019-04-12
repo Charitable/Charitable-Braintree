@@ -69,3 +69,24 @@ add_filter( 'charitable_process_donation_braintree', array( 'Charitable_Gateway_
  * @see Charitable_Braintree_Webhook_Processor::process()
  */
 add_action( 'charitable_process_ipn_braintree', array( 'Charitable_Braintree_Webhook_Processor', 'process' ) );
+
+/**
+ * Refund a donation from the dashboard.
+ *
+ * @see Charitable_Gateway_Braintree::refund_donation_from_dashboard()
+ */
+add_action( 'charitable_process_refund_braintree', [ 'Charitable_Gateway_Braintree', 'refund_donation_from_dashboard' ] );
+
+/**
+ * Returns whether a subscription can be cancelled.
+ *
+ * @see Charitable_Gateway_Braintree::is_subscription_cancellable()
+ */
+// add_filter( 'charitable_recurring_can_cancel_braintree', [ 'Charitable_Gateway_Braintree', 'is_subscription_cancellable' ], 10, 2 );
+
+/**
+ * Cancel a subscription from the dashboard.
+ *
+ * @see Charitable_Gateway_Braintree::cancel_subscription()
+ */
+// add_action( 'charitable_process_cancellation_braintree', [ 'Charitable_Gateway_Braintree', 'cancel_subscription' ], 10, 2 );

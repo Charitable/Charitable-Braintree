@@ -50,6 +50,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 			$this->supports = array(
 				'1.3.0',
 				'recurring',
+				'refunds',
 			);
 
 			/**
@@ -495,6 +496,85 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 			}
 
 			return $options;
+		}
+
+		/**
+		 * Check whether a particular donation can be refunded automatically in Braintree.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  Charitable_Donation $donation The donation object.
+		 * @return boolean
+		 */
+		public function is_donation_refundable( Charitable_Donation $donation ) {
+			$secret_key = $donation->get_test_mode( false ) ? 'test_private_key' : 'live_private_key';
+
+			if ( ! $this->get_value( $secret_key ) ) {
+				return false;
+			}
+
+			return false !== $donation->get_gateway_transaction_id();
+		}
+
+		/**
+		 * Process a refund initiated in the WordPress dashboard.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  int $donation_id The donation ID.
+		 * @return boolean
+		 */
+		public static function refund_donation_from_dashboard( $donation_id ) {
+			$donation = charitable_get_donation( $donation_id );
+
+			if ( ! $donation ) {
+				return false;
+			}
+
+			$transaction = $donation->get_gateway_transaction_id();
+
+			if ( ! $transaction ) {
+				return false;
+			}
+
+			$gateway   = new Charitable_Gateway_Braintree();
+			$test_mode = $donation->get_test_mode( false );
+			$braintree = $gateway->get_gateway_instance( $test_mode );
+
+			try {
+				$result = $braintree->transaction()->refund( $transaction );
+
+				update_post_meta( $donation_id, '_braintree_refunded', true );
+				update_post_meta( $donation_id, '_braintree_refund_id', $result->transaction->refundedTransactionId );
+
+				$refund_url = sprintf(
+					'https://%sbraintreegateway.com/merchants/%s/transactions/%s',
+					$test_mode ? 'sandbox.' : '',
+					$test_mode ? $gateway->get_value( 'test_merchant_id' ) : $gateway->get_value( 'live_merchant_id' ),
+					$result->transaction->id
+				);
+
+				$donation->log()->add(
+					sprintf(
+						/* translators: %s: transaction reference. */
+						__( 'Braintree refund transaction ID: %s', 'charitable-braintree' ),
+						'<a href="' . $refund_url . '" target="_blank"><code>' . $result->transaction->refundedTransactionId . '</code></a></code>'
+					)
+				);
+
+				return true;
+			} catch ( Exception $e ) {
+				$donation->log()->add(
+					sprintf(
+						/* translators: %s: error message. */
+						__( 'Braintree refund failed: %s', 'charitable-braintree' ),
+						$e->message
+					)
+				);
+
+				return false;
+			}
+
 		}
 	}
 
