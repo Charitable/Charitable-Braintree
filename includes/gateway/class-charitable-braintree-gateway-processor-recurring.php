@@ -121,15 +121,16 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 					[
 						'planId'             => $plan_id,
 						'paymentMethodToken' => $payment_method,
+						'price'              => array_sum( $details['amount'] ),
 						'descriptor'         => [
-							'name' => substr(
+							'name' => substr( 
 								sprintf(
 									'%s*%s',
 									get_option( 'blogname' ),
 									implode( ',', $details['campaigns'] )
 								),
 								0,
-								18
+								22
 							),
 							'url'  => substr( $url_parts['host'], 0, 13 ),
 						],
@@ -170,13 +171,21 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 					return true;
 
 				} catch ( Exception $e ) {
+					charitable_get_notices()->add_error(
+						sprintf(
+							/* translators: %1$s: error message; %2$s: error code */
+							__( 'Donation failed to process with error: %1$s [%2$s]', 'charitable-braintree' ),
+							$e->getMessage(),
+							$e->getCode()
+						)
+					);
+
 					if ( defined( 'CHARITABLE_DEBUG' ) && CHARITABLE_DEBUG ) {
 						error_log( get_class( $e ) );
 						error_log( $e->getMessage() . ' [' . $e->getCode() . ']' );
 					}
 
 					return false;
-
 				}
 			}
 
@@ -259,6 +268,15 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 				return true;
 
 			} catch ( Exception $e ) {
+				charitable_get_notices()->add_error(
+					sprintf(
+						/* translators: %1$s: error message; %2$s: error code */
+						__( 'Donation failed to process with error: %1$s [%2$s]', 'charitable-braintree' ),
+						$e->getMessage(),
+						$e->getCode()
+					)
+				);
+
 				if ( defined( 'CHARITABLE_DEBUG' ) && CHARITABLE_DEBUG ) {
 					error_log( get_class( $e ) );
 					error_log( $e->getMessage() . ' [' . $e->getCode() . ']' );

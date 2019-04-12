@@ -71,10 +71,14 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 				],
 				'channel'    => 'Charitable_SP',
 				'descriptor' => [
-					'name' => substr(
-						sprintf( '%s*%s', get_option( 'blogname' ), $this->donation->get_campaigns_donated_to() ),
+					'name' => substr( 
+						sprintf(
+							'%s*%s',
+							get_option( 'blogname' ),
+							$this->donation->get_campaigns_donated_to()
+						),
 						0,
-						18
+						22
 					),
 					'url'  => substr( $url_parts['host'], 0, 13 ),
 				],
