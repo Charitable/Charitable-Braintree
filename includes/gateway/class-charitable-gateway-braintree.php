@@ -48,7 +48,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 			);
 
 			$this->supports = array(
-				'1.0.0',
+				'1.3.0',
 				'recurring',
 				'refunds',
 			);

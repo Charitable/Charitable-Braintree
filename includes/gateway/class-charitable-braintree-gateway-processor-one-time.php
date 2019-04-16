@@ -100,8 +100,6 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 				];
 			}
 
-			error_log( var_export( $transaction_data, true ) );
-
 			/**
 			 * Create sale transaction in Braintree.
 			 */
