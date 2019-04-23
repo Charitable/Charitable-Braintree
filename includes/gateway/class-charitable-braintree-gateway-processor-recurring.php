@@ -123,7 +123,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 						'paymentMethodToken' => $payment_method,
 						'price'              => array_sum( $details['amount'] ),
 						'descriptor'         => [
-							'name' => substr( 
+							'name' => substr(
 								sprintf(
 									'%s*%s',
 									get_option( 'blogname' ),
@@ -139,10 +139,12 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 
 				try {
 					$result = $this->braintree->subscription()->create( $data );
-					error_log( var_export( $result, true ) );
 
 					if ( ! $result->success ) {
-						error_log( var_export( $result->errors->deepAll(), true ) );
+						if ( defined( 'CHARITABLE_DEBUG' ) && CHARITABLE_DEBUG ) {
+							error_log( var_export( $result->errors->deepAll(), true ) );
+						}
+
 						charitable_get_notices()->add_error( __( 'Subscription not processed successfully in payment gateway.', 'charitable-braintree' ) );
 						return false;
 					}
@@ -187,101 +189,6 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 
 					return false;
 				}
-			}
-
-			/**
-			 * Prepare sale transaction data.
-			 */
-			$transaction_data = [
-				'amount'             => number_format( $this->donation->get_total_donation_amount( true ), 2 ),
-				'orderId'            => (string) $this->donation->get_donation_id(),
-				'paymentMethodNonce' => $this->get_gateway_value_from_processor( 'token' ),
-				'options'            => [
-					'submitForSettlement' => true,
-				],
-				'channel'            => 'Charitable_SP',
-				'customer'           => [
-					'email'     => $this->donor->get_donor_meta( 'email' ),
-					'firstName' => $this->donor->get_donor_meta( 'first_name' ),
-					'lastName'  => $this->donor->get_donor_meta( 'last_name' ),
-					'phone'     => $this->donor->get_donor_meta( 'phone' ),
-				],
-				'descriptor'         => [
-					'name' => substr(
-						sprintf( '%s*%s', get_option( 'blogname' ), $this->donation->get_campaigns_donated_to() ),
-						0,
-						18
-					),
-					'url'  => substr( $url_parts['host'], 0, 13 ),
-				],
-				'lineItems'          => [],
-				// 'merchantAccountId'  => $keys['merchant_id'],
-			];
-
-			foreach ( $this->donation->get_campaign_donations() as $campaign_donation ) {
-				$amount = Charitable_Currency::get_instance()->sanitize_monetary_amount( (string) $campaign_donation->amount, true );
-
-				$transaction_data['lineItems'][] = [
-					'kind'        => 'debit',
-					'name'        => $campaign_donation->campaign_name,
-					'productCode' => $campaign_donation->campaign_id,
-					'quantity'    => 1,
-					'totalAmount' => $amount,
-					'unitAmount'  => $amount,
-					'url'         => get_permalink( $campaign_donation->campaign_id ),
-				];
-			}
-
-			error_log( var_export( $transaction_data, true ) );
-
-			/**
-			 * Create sale transaction in Braintree.
-			 */
-			try {
-				$result = $this->braintree->transaction()->sale( $transaction_data );
-
-				if ( ! $result->success ) {
-					error_log( var_export( $result->errors->deepAll(), true ) );
-					charitable_get_notices()->add_error( __( 'Donation not processed successfully in payment gateway.', 'charitable-braintree' ) );
-					return false;
-				}
-
-				$transaction_url = sprintf(
-					'https://%sbraintreegateway.com/merchants/%s/transactions/%s',
-					charitable_get_option( 'test_mode' ) ? 'sandbox.' : '',
-					$keys['merchant_id'],
-					$result->transaction->id
-				);
-
-				$this->donation->log()->add(
-					sprintf(
-						/* translators: %s: link to Braintree transaction details */
-						__( 'Braintree transaction: %s', 'charitable-braintree' ),
-						'<a href="' . $transaction_url . '" target="_blank"><code>' . $result->transaction->id . '</code></a>'
-					)
-				);
-
-				$this->donation->set_gateway_transaction_id( $result->transaction->id );
-
-				$this->donation->update_status( 'charitable-completed' );
-
-				return true;
-
-			} catch ( Exception $e ) {
-				charitable_get_notices()->add_error(
-					sprintf(
-						/* translators: %1$s: error message; %2$s: error code */
-						__( 'Donation failed to process with error: %1$s [%2$s]', 'charitable-braintree' ),
-						$e->getMessage(),
-						$e->getCode()
-					)
-				);
-
-				if ( defined( 'CHARITABLE_DEBUG' ) && CHARITABLE_DEBUG ) {
-					error_log( get_class( $e ) );
-					error_log( $e->getMessage() . ' [' . $e->getCode() . ']' );
-				}
-				return false;
 			}
 		}
 	}

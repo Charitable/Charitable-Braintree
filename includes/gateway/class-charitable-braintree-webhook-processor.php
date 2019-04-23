@@ -269,7 +269,7 @@ if ( ! class_exists( 'Charitable_Braintree_Webhook_Processor' ) ) :
 			if ( empty( $subscription ) ) {
 				return __( 'Subscription Webhook: No matching subscription found.', 'charitable-braintree' );
 			}
-		
+
 			/* Get the most recently charged transaction. */
 			$transactions = $webhook->subscription->transactions;
 			$transaction  = $transactions[0];
@@ -357,7 +357,7 @@ if ( ! class_exists( 'Charitable_Braintree_Webhook_Processor' ) ) :
 
 			$gateway   = new Charitable_Gateway_Braintree;
 			$braintree = $gateway->get_gateway_instance();
-			
+
 			try {
 				return $braintree->webhookNotification()->parse( $_POST['bt_signature'], $_POST['bt_payload'] );
 

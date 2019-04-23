@@ -485,8 +485,28 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 			}
 
 			try {
-				foreach ( $braintree->plan()->all() as $plan ) {
-					$options[ $plan->id ] = $plan->name;
+				$periods = charitable_recurring_get_donation_periods_i18n();
+				$periods = array_combine(
+					$periods,
+					array_fill( 0, count( $periods ), [] )
+				);
+				$plans   = $braintree->plan()->all();
+
+				foreach ( $plans as $plan ) {
+					$period                          = $this->get_period_for_plan( $plan );
+					$periods[ $period ][ $plan->id ] = $plan->name;
+					error_log( var_export( $plan, true ) );
+				}
+
+				foreach ( $periods as $period => $plans ) {
+					if ( empty( $plans ) ) {
+						continue;
+					}
+
+					$options[ $period ] = [
+						'label'   => ucfirst( charitable_recurring_get_donation_period_adverb( $period ) ),
+						'options' => $plans,
+					];
 				}
 			} catch ( Exception $e ) {
 				if ( defined( 'CHARITABLE_DEBUG' ) && CHARITABLE_DEBUG ) {
@@ -496,6 +516,27 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 			}
 
 			return $options;
+		}
+
+		/**
+		 * Return the period to use for a particular plan.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  Braintree\Plan $plan The Braintree plan object.
+		 * @return string
+		 */
+		public function get_period_for_plan( $plan ) {
+			switch ( $plan->billingFrequency ) { // phpcs:ignore
+				case 3:
+					return 'quarter';
+				case 6:
+					return 'semiannual';
+				case 12:
+					return 'annual';
+				default:
+					return 'month';
+			}
 		}
 
 		/**
