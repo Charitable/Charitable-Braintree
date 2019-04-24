@@ -55,7 +55,7 @@ if ( ! class_exists( 'Charitable_Braintree_Fields' ) ) :
 							'section'        => 'campaign-donation-options',
 							'type'           => 'select',
 							'priority'       => 26,
-							'options'        => $gateway->get_plans( false, __( 'Use default plan', 'charitable-braintree' ) ),
+							// 'options'        => $gateway->get_plans( false, __( 'Use default plan', 'charitable-braintree' ) ),
 							'value_callback' => function( Charitable_Campaign $campaign ) {
 								return $this->get_recurring_billing_plan_for_campaign_live( $campaign, false );
 							},
@@ -71,7 +71,7 @@ if ( ! class_exists( 'Charitable_Braintree_Fields' ) ) :
 							'section'        => 'campaign-donation-options',
 							'type'           => 'select',
 							'priority'       => 26,
-							'options'        => $gateway->get_plans( true, __( 'Use default plan', 'charitable-braintree' ) ),
+							// 'options'        => $gateway->get_plans( true, __( 'Use default plan', 'charitable-braintree' ) ),
 							'value_callback' => function( Charitable_Campaign $campaign ) {
 								return $this->get_recurring_billing_plan_for_campaign_test( $campaign, false );
 							},

@@ -140,19 +140,21 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 							'type'     => 'heading',
 							'priority' => 15,
 						],
-						'default_live_plan'         => [
-							'type'     => 'select',
-							'title'    => __( 'Default Live Plan', 'charitable-braintree' ),
-							'priority' => 16,
-							'options'  => $this->get_plans( false, __( 'Select a default plan', 'charitable-braintree' ) ),
-							'help'     => __( 'Select a default plan to use for any subscriptions created by Charitable. You can override this on a per-campaign basis.', 'charitable-braintree' ),
+						'default_live_plans'        => [
+							'type'      => 'braintree-plans',
+							'base_path' => charitable_braintree()->get_path( 'includes', true ) . 'admin/views/',
+							'title'     => __( 'Default Live Plans', 'charitable-braintree' ),
+							'priority'  => 16,
+							'test_mode' => false,
+							'help'      => __( 'Select default Braintree plans to use for any subscriptions created by Charitable. You can override this on a per-campaign basis.', 'charitable-braintree' ),
 						],
-						'default_test_plan'         => [
-							'type'     => 'select',
-							'title'    => __( 'Default Test Plan', 'charitable-braintree' ),
-							'priority' => 16,
-							'options'  => $this->get_plans( true, __( 'Select a default plan', 'charitable-braintree' ) ),
-							'help'     => __( 'Select a default plan to use for any subscriptions created by Charitable. You can override this on a per-campaign basis.', 'charitable-braintree' ),
+						'default_test_plans'        => [
+							'type'      => 'braintree-plans',
+							'base_path' => charitable_braintree()->get_path( 'includes', true ) . 'admin/views/',
+							'title'     => __( 'Default Test Plans', 'charitable-braintree' ),
+							'priority'  => 16,
+							'test_mode' => true,
+							'help'      => __( 'Select default Braintree plans to use for any subscriptions created by Charitable. You can override this on a per-campaign basis.', 'charitable-braintree' ),
 						],
 					]
 				);
@@ -464,79 +466,6 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 			}
 
 			return $gateway_processor->run();
-		}
-
-		/**
-		 * Return Braintree plans as a list of options.
-		 *
-		 * @since  1.0.0
-		 *
-		 * @param  boolean $test_mode      Whether to get the test or live plans.
-		 * @param  string  $default_choice Text to go along with default choice.
-		 * @return array
-		 */
-		public function get_plans( $test_mode, $default_choice = '' ) {
-			$options   = empty( $default_choice ) ? [] : [ '' => $default_choice ];
-			$braintree = $this->get_gateway_instance( $test_mode );
-
-			/* We're missing keys, so return empty options. */
-			if ( ! $braintree ) {
-				return $options;
-			}
-
-			try {
-				$periods = charitable_recurring_get_donation_periods_i18n();
-				$periods = array_combine(
-					$periods,
-					array_fill( 0, count( $periods ), [] )
-				);
-				$plans   = $braintree->plan()->all();
-
-				foreach ( $plans as $plan ) {
-					$period                          = $this->get_period_for_plan( $plan );
-					$periods[ $period ][ $plan->id ] = $plan->name;
-					error_log( var_export( $plan, true ) );
-				}
-
-				foreach ( $periods as $period => $plans ) {
-					if ( empty( $plans ) ) {
-						continue;
-					}
-
-					$options[ $period ] = [
-						'label'   => ucfirst( charitable_recurring_get_donation_period_adverb( $period ) ),
-						'options' => $plans,
-					];
-				}
-			} catch ( Exception $e ) {
-				if ( defined( 'CHARITABLE_DEBUG' ) && CHARITABLE_DEBUG ) {
-					error_log( get_class( $e ) );
-					error_log( $e->getMessage() . ' [' . $e->getCode() . ']' );
-				}
-			}
-
-			return $options;
-		}
-
-		/**
-		 * Return the period to use for a particular plan.
-		 *
-		 * @since  1.0.0
-		 *
-		 * @param  Braintree\Plan $plan The Braintree plan object.
-		 * @return string
-		 */
-		public function get_period_for_plan( $plan ) {
-			switch ( $plan->billingFrequency ) { // phpcs:ignore
-				case 3:
-					return 'quarter';
-				case 6:
-					return 'semiannual';
-				case 12:
-					return 'annual';
-				default:
-					return 'month';
-			}
 		}
 
 		/**

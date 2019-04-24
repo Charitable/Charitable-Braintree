@@ -1,0 +1,14 @@
+.charitable-braintree-plan-settings {
+	max-width: 400px;
+
+	th,
+	td {
+		padding-left: 10px;
+		padding-right: 10px;
+	}
+}
+
+.charitable_page_charitable-settings .form-table .charitable-braintree-plan-settings th {
+    width: 100px !important;
+    min-width: 100px !important;
+}

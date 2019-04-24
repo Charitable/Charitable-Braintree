@@ -33,14 +33,23 @@ module.exports = function(grunt) {
         },
 
         // Sass
-        sass: {
-            dist: {
+		sass: {
+			dist: {
+                files: {
+                    'assets/css/charitable-braintree-admin.css' : 'assets/css/scss/charitable-braintree-admin.scss'
+                }
+            }
+        },
+
+        // minify CSS
+        cssmin: {
+            target: {
                 files: [{
                     expand: true,
                     cwd: 'assets/css',
-                    src: ['*.scss'],
-                    dest: '.',
-                    ext: '.css'
+                    dest: 'assets/css',
+                    src: ['*.css', '!*.min.css'],
+                    ext: '.min.css'
                 }]
             }
         },

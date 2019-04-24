@@ -170,6 +170,7 @@ if ( ! class_exists( 'Charitable_Braintree' ) ) :
 			/* Gateways */
 			require_once( $includes_dir . 'gateway/class-charitable-braintree-gateway-processor-one-time.php' );
 			require_once( $includes_dir . 'gateway/class-charitable-braintree-gateway-processor-recurring.php' );
+			require_once( $includes_dir . 'gateway/class-charitable-braintree-plans.php' );
 			require_once( $includes_dir . 'gateway/class-charitable-braintree-webhook-processor.php' );
 			require_once( $includes_dir . 'gateway/class-charitable-gateway-braintree.php' );
 			require_once( $includes_dir . 'gateway/charitable-braintree-gateway-hooks.php' );

@@ -48,6 +48,11 @@ if ( ! class_exists( 'Charitable_Braintree_Admin' ) ) :
 			 * When the Braintree settings are saved, preserve the webhook endpoint status.
 			 */
 			add_action( 'charitable_save_settings', [ $this, 'on_save_settings' ], 10, 3 );
+
+			/**
+			 * Register admin scripts & styles.
+			 */
+			add_action( 'admin_enqueue_scripts', [ $this, 'setup_scripts' ] );
 		}
 
 		/**
@@ -165,6 +170,30 @@ if ( ! class_exists( 'Charitable_Braintree_Admin' ) ) :
 			$values['gateways_braintree']['webhook_endpoint_status'] = $old_values['gateways_braintree']['webhook_endpoint_status'];
 
 			return $values;
+		}
+
+		/**
+		 * Set up scripts & stylesheets for the admin.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @return void
+		 */
+		public function setup_scripts() {
+			if ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) {
+				$version = time();
+				$suffix  = '';
+			} else {
+				$version = charitable_braintree()->get_version();
+				$suffix  = '.min';
+			}
+
+			wp_register_style(
+				'charitable-braintree-admin-styles',
+				charitable_braintree()->get_path( 'directory', false ) . 'assets/css/charitable-braintree-admin' . $suffix . '.css',
+				array(),
+				$version
+			);
 		}
 	}
 
