@@ -27,7 +27,8 @@ module.exports = function(grunt) {
         uglify: {
             dist: {
                 files: {
-                    'assets/js/charitable-braintree-handler.min.js' : 'assets/js/charitable-braintree-handler.js'
+                    'assets/js/charitable-braintree-handler.min.js' : 'assets/js/charitable-braintree-handler.js',
+                    'assets/js/charitable-braintree-admin.min.js' : 'assets/js/charitable-braintree-admin.js'
                 }
             }
         },

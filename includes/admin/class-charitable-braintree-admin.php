@@ -188,6 +188,13 @@ if ( ! class_exists( 'Charitable_Braintree_Admin' ) ) :
 				$suffix  = '.min';
 			}
 
+			wp_register_script(
+				'charitable-braintree-admin-script',
+				charitable_braintree()->get_path( 'directory', false ) . 'assets/js/charitable-braintree-admin' . $suffix . '.js',
+				array(),
+				$version
+			);
+
 			wp_register_style(
 				'charitable-braintree-admin-styles',
 				charitable_braintree()->get_path( 'directory', false ) . 'assets/css/charitable-braintree-admin' . $suffix . '.css',

@@ -80,16 +80,14 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 				return false;
 			}
 
-			$url_parts    = parse_url( home_url() );
-			$plans        = [];
-			$plan_setting = charitable_get_option( 'test_mode', false ) ? 'braintree_recurring_test_plan' : 'braintree_recurring_live_plan';
+			$url_parts = parse_url( home_url() );
+			$plans     = [];
 
 			foreach ( $this->donation->get_campaign_donations() as $campaign_donation ) {
-				$campaign = charitable_get_campaign( $campaign_donation->campaign_id );
-				$plan_id  = $campaign->get( $plan_setting );
+				$plan_id = $this->get_matching_plan_id( $campaign_donation->campaign_id );
 
 				/* We need to have a plan ID in order to create the subscription. */
-				if ( empty( $plan_id ) ) {
+				if ( ! $plan_id ) {
 					charitable_get_notices()->add_error(
 						__( 'ERROR: Unable to create recurring donation without default plan.', 'charitable-braintree' )
 					);
@@ -190,6 +188,31 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 					return false;
 				}
 			}
+		}
+
+		/**
+		 * Return the plan id to use for a campaign donation.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  int $campaign_id The campaign ID.
+		 * @return string|false
+		 */
+		public function get_matching_plan_id( $campaign_id ) {
+			/* Get the recurring donation period. */
+			$period = strtolower( $this->processor->get_donation_data_value( 'donation_period', false ) );
+
+			/* Get the plans set for this campaign. */
+			$test_mode      = charitable_get_option( 'test_mode', false );
+			$plan_setting   = $test_mode ? 'braintree_recurring_test_plans' : 'braintree_recurring_live_plans';
+			$campaign_plans = charitable_get_campaign( $campaign_id )->get( $plan_setting );
+
+			/* If no plan is set for the period, either in the campaign or in the defaults, return false. */
+			if ( ! array_key_exists( $period, $campaign_plans ) || empty( $campaign_plans[ $period ] ) ) {
+				return false;
+			}
+
+			return $campaign_plans[ $period ];
 		}
 	}
 

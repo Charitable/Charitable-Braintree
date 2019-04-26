@@ -74,6 +74,22 @@ function charitable_braintree_get_billing_periods() {
 }
 
 /**
+ * Return the empty plans array.
+ *
+ * @since  1.0.0
+ *
+ * @return array
+ */
+function charitable_braintree_get_empty_plans() {
+	$periods = charitable_braintree_get_billing_periods();
+
+	return array_combine(
+		$periods,
+		array_fill( 0, count( $periods ), '' )
+	);
+}
+
+/**
  * Return the default Braintree plans.
  *
  * @since  1.0.0
@@ -82,11 +98,7 @@ function charitable_braintree_get_billing_periods() {
  * @return array
  */
 function charitable_braintree_get_default_plans( $test_mode ) {
-	$periods  = charitable_braintree_get_billing_periods();
-	$defaults = array_combine(
-		$periods,
-		array_fill( 0, count( $periods ), '' )
-	);
+	$defaults = charitable_braintree_get_empty_plans();
 	$setting  = $test_mode ? 'default_test_plans' : 'default_live_plans';
 	$plans    = charitable_get_option( [ 'gateways_braintree', $setting ] );
 
