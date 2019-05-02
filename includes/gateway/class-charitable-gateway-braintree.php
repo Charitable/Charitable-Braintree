@@ -360,13 +360,40 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 				return false;
 			}
 
-			$args = [];
-
-			if ( is_user_logged_in() ) {
-				// $args['customerId'] = get_current_user_id();
-			}
+			$customer_id = $this->get_braintree_customer_id( $test_mode );
+			$args        = $customer_id ? [ 'customerId' => $customer_id ] : [];
 
 			return $braintree->clientToken()->generate( $args );
+		}
+
+		/**
+		 * Returns the Braintree customer id for the current donor.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  boolean|null $test_mode Whether to get test mode keys. If null, this
+		 *                                 will use the current site Test Mode setting.
+		 * @return string|false Returns a string if a customer id is set. Otherwise returns false.
+		 */
+		public function get_braintree_customer_id( $test_mode = null ) {
+			if ( is_null( $test_mode ) ) {
+				$test_mode = charitable_get_option( 'test_mode' );
+			}
+
+			if ( ! is_user_logged_in() ) {
+				return false;
+			}
+
+			$donor_id = charitable_get_user( get_current_user_id() )->get_donor_id();
+
+			if ( ! $donor_id ) {
+				return false;
+			}
+
+			$meta_postfix = $test_mode ? 'test' : 'live';
+			$customer_id  = get_metadata( 'donor', $donor_id, 'braintree_customer_id_' . $meta_postfix, true );
+
+			return $customer_id ? $customer_id : false;
 		}
 
 		/**

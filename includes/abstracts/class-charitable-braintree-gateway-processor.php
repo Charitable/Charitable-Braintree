@@ -169,7 +169,17 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 			try {
 				$result = $this->braintree->customer()->create( $data );
 
-				return $result->success ? $result->customer->id : false;
+				if ( ! $result->success ) {
+					return false;
+				}
+
+				if ( is_user_logged_in() ) {
+					$meta_postfix = charitable_get_option( 'test_mode' ) ? 'test' : 'live';
+
+					update_metadata( 'donor', $this->donor->donor_id, 'braintree_customer_id_' . $meta_postfix, $result->customer->id );
+				}
+
+				return $result->customer->id;
 
 			} catch ( Exception $e ) {
 				if ( defined( 'CHARITABLE_DEBUG' ) && CHARITABLE_DEBUG ) {
