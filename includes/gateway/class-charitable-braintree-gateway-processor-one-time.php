@@ -72,14 +72,14 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 			 * Prepare sale transaction data.
 			 */
 			$transaction_data = [
-				'amount'     => number_format( $this->donation->get_total_donation_amount( true ), 2 ),
-				'orderId'    => (string) $this->donation->get_donation_id(),
-				'customerId' => $customer_id,
-				'options'    => [
+				'amount'            => number_format( $this->donation->get_total_donation_amount( true ), 2 ),
+				'orderId'           => (string) $this->donation->get_donation_id(),
+				'customerId'        => $customer_id,
+				'options'           => [
 					'submitForSettlement' => true,
 				],
-				'channel'    => 'Charitable_SP',
-				'descriptor' => [
+				'channel'           => 'Charitable_SP',
+				'descriptor'        => [
 					'name' => substr(
 						sprintf(
 							'%s*%s',
@@ -91,8 +91,8 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 					),
 					'url'  => substr( $url_parts['host'], 0, 13 ),
 				],
-				'lineItems'  => [],
-				// 'merchantAccountId'  => $keys['merchant_id'],
+				'lineItems'         => [],
+				'merchantAccountId' => $this->get_merchant_account_id(),
 			];
 
 			foreach ( $this->donation->get_campaign_donations() as $campaign_donation ) {

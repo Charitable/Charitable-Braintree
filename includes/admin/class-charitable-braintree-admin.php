@@ -53,6 +53,21 @@ if ( ! class_exists( 'Charitable_Braintree_Admin' ) ) :
 			 * Register admin scripts & styles.
 			 */
 			add_action( 'admin_enqueue_scripts', [ $this, 'setup_scripts' ] );
+
+			/**
+			 * If we're on the Braintree settings page, load scripts and add hidden nonce.
+			 */
+			add_action( 'charitable_before_admin_settings', [ $this, 'load_scripts_on_braintree_settings_page' ] );
+
+			/**
+			 * Add a nonce before the button on the Braintree settings page.
+			 */
+			add_filter( 'charitable_settings_button_gateways_braintree', [ $this, 'add_nonce_to_braintree_settings_page' ] );
+
+			/**
+			 * Get the merchant account options for an AJAX request.
+			 */
+			add_action( 'wp_ajax_charitable_braintree_get_merchant_accounts', [ $this, 'get_merchant_accounts_via_ajax' ] );
 		}
 
 		/**
@@ -119,6 +134,95 @@ if ( ! class_exists( 'Charitable_Braintree_Admin' ) ) :
 		}
 
 		/**
+		 * Set up scripts & stylesheets for the admin.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @return void
+		 */
+		public function setup_scripts() {
+			if ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) {
+				$version = time();
+				$version = '1';
+				$suffix  = '';
+			} else {
+				$version = charitable_braintree()->get_version();
+				$suffix  = '.min';
+			}
+
+			wp_register_script(
+				'charitable-braintree-admin-script',
+				charitable_braintree()->get_path( 'directory', false ) . 'assets/js/charitable-braintree-admin' . $suffix . '.js',
+				array(),
+				$version
+			);
+
+			wp_register_style(
+				'charitable-braintree-admin-styles',
+				charitable_braintree()->get_path( 'directory', false ) . 'assets/css/charitable-braintree-admin' . $suffix . '.css',
+				array(),
+				$version
+			);
+		}
+
+		/**
+		 * Load scripts on the Braintree settings page.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  string $group The settings group we're on.
+		 * @return boolean
+		 */
+		public function load_scripts_on_braintree_settings_page( $group ) {
+			if ( 'gateways_braintree' != $group ) {
+				return false;
+			}
+
+			if ( ! wp_script_is( 'charitable-braintree-admin-script', 'enqueued' ) ) {
+				wp_enqueue_script( 'charitable-braintree-admin-script' );
+			}
+
+			return true;
+		}
+
+		/**
+		 * Add a nonce to the Braintree settings page.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  string $button The button output.
+		 * @return string
+		 */
+		public function add_nonce_to_braintree_settings_page( $button ) {
+			return wp_nonce_field( 'braintree_settings', 'braintree_settings_nonce', true, false ) . $button;
+		}
+
+		/**
+		 * Preserve the webhook_endpoint_status setting when saving Braintree settings.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  array $values     The submitted values.
+		 * @param  array $new_values The new settings.
+		 * @param  array $old_values The previous settings.
+		 * @return array
+		 */
+		public function on_save_settings( $values, $new_values, $old_values ) {
+			/* Bail early if this is not the Braintree settings page. */
+			if ( ! array_key_exists( 'gateways_braintree', $values ) ) {
+				return $values;
+			}
+
+			if ( ! isset( $old_values['gateways_braintree']['webhook_endpoint_status'] ) ) {
+				return $values;
+			}
+
+			$values['gateways_braintree']['webhook_endpoint_status'] = $old_values['gateways_braintree']['webhook_endpoint_status'];
+
+			return $values;
+		}
+
+		/**
 		 * Check the webhook endpoint status after a day.
 		 *
 		 * The purpose of this check is to see whether any incoming webhooks have
@@ -148,59 +252,33 @@ if ( ! class_exists( 'Charitable_Braintree_Admin' ) ) :
 		}
 
 		/**
-		 * Preserve the webhook_endpoint_status setting when saving Braintree settings.
+		 * Get the merchant accounts via AJAX.
 		 *
-		 * @since  1.0.0
+		 * @since  since
 		 *
-		 * @param  array $values     The submitted values.
-		 * @param  array $new_values The new settings.
-		 * @param  array $old_values The previous settings.
-		 * @return array
+		 * @return mixed
 		 */
-		public function on_save_settings( $values, $new_values, $old_values ) {
-			/* Bail early if this is not the Braintree settings page. */
-			if ( ! array_key_exists( 'gateways_braintree', $values ) ) {
-				return $values;
-			}
+		public function get_merchant_accounts_via_ajax() {
+			if ( ! wp_verify_nonce( $_POST['braintree_settings_nonce'], 'braintree_settings' ) ) {
+				wp_send_json_error( __( 'Nonce verification failed.', 'charitable-braintree' ) );
+			};
 
-			if ( ! isset( $old_values['gateways_braintree']['webhook_endpoint_status'] ) ) {
-				return $values;
-			}
+			$gateway  = new Charitable_Gateway_Braintree();
+			$accounts = $gateway->get_merchant_accounts( $_POST['test_mode'], charitable_array_subset( $_POST, [ 'merchant_id', 'public_key', 'private_key' ] ) );
 
-			$values['gateways_braintree']['webhook_endpoint_status'] = $old_values['gateways_braintree']['webhook_endpoint_status'];
+			ob_start();
 
-			return $values;
-		}
-
-		/**
-		 * Set up scripts & stylesheets for the admin.
-		 *
-		 * @since  1.0.0
-		 *
-		 * @return void
-		 */
-		public function setup_scripts() {
-			if ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) {
-				$version = time();
-				$suffix  = '';
-			} else {
-				$version = charitable_braintree()->get_version();
-				$suffix  = '.min';
-			}
-
-			wp_register_script(
-				'charitable-braintree-admin-script',
-				charitable_braintree()->get_path( 'directory', false ) . 'assets/js/charitable-braintree-admin' . $suffix . '.js',
-				array(),
-				$version
+			charitable_admin_view(
+				'settings/select',
+				[
+					'options' => $accounts,
+					'key'     => [ 'gateways_braintree', $_POST['test_mode'] ? 'test_merchant_account_id' : 'live_merchant_account_id' ],
+					'name'    => substr( $_POST['field_name'], 20, -1 ),
+					'classes' => $_POST['field_classes'],
+				]
 			);
 
-			wp_register_style(
-				'charitable-braintree-admin-styles',
-				charitable_braintree()->get_path( 'directory', false ) . 'assets/css/charitable-braintree-admin' . $suffix . '.css',
-				array(),
-				$version
-			);
+			wp_send_json_success( ob_get_clean() );
 		}
 	}
 

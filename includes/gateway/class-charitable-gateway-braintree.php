@@ -82,51 +82,65 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 			$settings = array_merge(
 				$settings,
 				[
-					'section_live_mode' => [
+					'section_live_mode'        => [
 						'title'    => __( 'Live Mode Settings', 'charitable-braintree' ),
 						'type'     => 'heading',
 						'priority' => 4,
 					],
-					'live_merchant_id'  => [
+					'live_merchant_id'         => [
 						'type'     => 'text',
 						'title'    => __( 'Live Merchant ID', 'charitable-braintree' ),
 						'priority' => 5,
 						'class'    => 'wide',
 					],
-					'live_public_key'   => [
+					'live_public_key'          => [
 						'type'     => 'text',
 						'title'    => __( 'Live Public Key', 'charitable-braintree' ),
 						'priority' => 6,
 						'class'    => 'wide',
 					],
-					'live_private_key'  => [
+					'live_private_key'         => [
 						'type'     => 'password',
 						'title'    => __( 'Live Private Key', 'charitable-braintree' ),
 						'priority' => 7,
 						'class'    => 'wide',
 					],
-					'section_test_mode' => [
+					'live_merchant_account_id' => [
+						'type'     => 'select',
+						'title'    => __( 'Live Merchant Account', 'charitable-braintree' ),
+						'priority' => 8,
+						'class'    => 'wide',
+						'options'  => $this->get_merchant_accounts( false ),
+					],
+					'section_test_mode'        => [
 						'title'    => __( 'Test Mode Settings', 'charitable-braintree' ),
 						'type'     => 'heading',
 						'priority' => 10,
 					],
-					'test_merchant_id'  => [
+					'test_merchant_id'         => [
 						'type'     => 'text',
 						'title'    => __( 'Test Merchant ID', 'charitable-braintree' ),
 						'priority' => 11,
 						'class'    => 'wide',
 					],
-					'test_public_key'   => [
+					'test_public_key'          => [
 						'type'     => 'text',
 						'title'    => __( 'Test Public Key', 'charitable-braintree' ),
 						'priority' => 12,
 						'class'    => 'wide',
 					],
-					'test_private_key'  => [
+					'test_private_key'         => [
 						'type'     => 'password',
 						'title'    => __( 'Test Private Key', 'charitable-braintree' ),
 						'priority' => 13,
 						'class'    => 'wide',
+					],
+					'test_merchant_account_id' => [
+						'type'     => 'select',
+						'title'    => __( 'Test Merchant Account', 'charitable-braintree' ),
+						'priority' => 14,
+						'class'    => 'wide',
+						'options'  => $this->get_merchant_accounts( true ),
 					],
 				]
 			);
@@ -309,6 +323,25 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		}
 
 		/**
+		 * Return the merchant account id to use for a transaction.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  boolean|null $test_mode Whether to get test mode keys. If null, this
+		 *                                 will use the current site Test Mode setting.
+		 * @return string
+		 */
+		public function get_merchant_account_id( $test_mode = null ) {
+			if ( is_null( $test_mode ) ) {
+				$test_mode = charitable_get_option( 'test_mode' );
+			}
+
+			$prefix = $test_mode ? 'test' : 'live';
+
+			return trim( $this->get_value( $prefix . '_merchant_account_id' ) );
+		}
+
+		/**
 		 * Return the Braintree_Gateway instance.
 		 *
 		 * @since  1.0.0
@@ -340,6 +373,56 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 					'privateKey'  => $keys['private_key'],
 				]
 			);
+		}
+
+		/**
+		 * Returns merchant accounts.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  boolean $test_mode Whether to return merchant accounts for sandbox or live.
+		 * @param  array   $keys      If set, will use these keys for getting the instance.
+		 *                            Otherwise, will use get_keys().
+		 * @return string[]
+		 */
+		public function get_merchant_accounts( $test_mode, $keys = [] ) {
+			$options   = [];
+			$braintree = $this->get_gateway_instance( $test_mode, $keys );
+
+			if ( ! $braintree ) {
+				return $options;
+			}
+
+			$currency = charitable_get_currency();
+
+			try {
+				$merchant_accounts = $braintree->merchantAccount()->all();
+
+				foreach ( $merchant_accounts as $merchant_account ) {
+					if ( $currency != $merchant_account->currencyIsoCode ) { // phpcs:ignore
+						continue;
+					}
+
+					if ( $merchant_account->default ) {
+						$label = sprintf(
+							/* translators: %s: merchant account id */
+							__( '%s - default', 'charitable-braintree' ),
+							$merchant_account->id
+						);
+					} else {
+						$label = $merchant_account->id;
+					}
+
+					$options[ $merchant_account->id ] = $label;
+				}
+			} catch ( Exception $e ) {
+				if ( defined( 'CHARITABLE_DEBUG' ) && CHARITABLE_DEBUG ) {
+					error_log( get_class( $e ) );
+					error_log( $e->getMessage() . ' [' . $e->getCode() . ']' );
+				}
+			}
+
+			return $options;
 		}
 
 		/**
