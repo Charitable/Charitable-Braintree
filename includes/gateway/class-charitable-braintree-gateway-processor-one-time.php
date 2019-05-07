@@ -42,11 +42,19 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 			$url_parts = parse_url( home_url() );
 
 			/**
-			 * Create a customer in the Vault.
+			 * Get the customer id.
 			 */
-			$customer_id = $this->create_customer();
+			$customer_id = $this->gateway->get_braintree_customer_id();
 
 			if ( ! $customer_id ) {
+				/**
+				 * Create a customer in the Vault.
+				 */
+				$customer_id = $this->create_customer();
+			}
+
+			if ( ! $customer_id ) {
+				$this->donation_log->add( __( 'Unable to set up customer in the Braintree Vault.', 'charitable-braintree' ) );
 				return false;
 			}
 
@@ -56,6 +64,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 			$payment_method = $this->create_payment_method( $customer_id );
 
 			if ( ! $payment_method ) {
+				$this->donation_log->add( __( 'Unable to add payment method.', 'charitable-braintree' ) );
 				return false;
 			}
 

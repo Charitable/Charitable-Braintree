@@ -231,7 +231,6 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 
 			try {
 				$result = $this->braintree->paymentMethod()->create( $data );
-
 				return $result->success ? $result->paymentMethod->token : false; // phpcs:ignore
 
 			} catch ( Exception $e ) {
