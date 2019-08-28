@@ -1,47 +1,286 @@
-# Copyright (c) 2019 WP Charitable
+# Copyright (C) 2019 WP Charitable
 # This file is distributed under the same license as the Charitable - Braintree package.
 msgid ""
 msgstr ""
-"Project-Id-Version: Charitable - Braintree 1.0.0\n"
+"Project-Id-Version: Charitable - Braintree 1.0.0-alpha.2\n"
 "Report-Msgid-Bugs-To: https://www.wpcharitable.com/\n"
-"POT-Creation-Date: 2015-12-19 04:50:42+00:00\n"
+"POT-Creation-Date: 2019-08-28 06:22:36+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2015-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2019-MO-DA HO:MI+ZONE\n"
 "Last-Translator: WP-Translations (http://wp-translations.org/)\n"
 "Language-Team: WP-Translations <wpt@wp-translations.org>\n"
-"X-Generator: grunt-wp-i18n 0.4.9\n"
-"X-Poedit-KeywordsList: "
-"__;_e;_x:1,2c;_ex:1,2c;_n:1,2;_nx:1,2,4c;_n_noop:1,2;_nx_noop:1,2,3c;esc_"
-"attr__;esc_html__;esc_attr_e;esc_html_e;esc_attr_x:1,2c;esc_html_x:1,2c;\n"
 "Language: en_US\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Poedit-Country: United States\n"
 "X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: "
+"__;_e;_x:1,2c;_ex:1,2c;_n:1,2;_nx:1,2,4c;_n_noop:1,2;_nx_noop:1,2,3c;esc_"
+"attr__;esc_html__;esc_attr_e;esc_html_e;esc_attr_x:1,2c;esc_html_x:1,2c;\n"
 "X-Poedit-Basepath: ../\n"
 "X-Poedit-SearchPath-0: .\n"
 "X-Poedit-Bookmarks: \n"
 "X-Textdomain-Support: yes\n"
+"X-Generator: grunt-wp-i18n 1.0.3\n"
 
-#: includes/class-charitable-extension-activation.php:45
+#: includes/admin/class-charitable-braintree-admin.php:83
+msgid "Settings"
+msgstr ""
+
+#: includes/admin/class-charitable-braintree-admin.php:96
+msgid "Activate Braintree Gateway"
+msgstr ""
+
+#: includes/admin/class-charitable-braintree-admin.php:263
+msgid "Nonce verification failed."
+msgstr ""
+
+#: includes/admin/class-charitable-extension-activation.php:55
 msgid "This plugin"
 msgstr ""
 
-#: includes/class-charitable-extension-activation.php:81
+#: includes/admin/class-charitable-extension-activation.php:94
 msgid "activate it"
 msgstr ""
 
-#: includes/class-charitable-extension-activation.php:84
+#: includes/admin/class-charitable-extension-activation.php:97
 msgid "install it"
 msgstr ""
 
-#: includes/class-charitable-braintree.php:246
-#: includes/class-charitable-braintree.php:257
-msgid "Cheatin&#8217; huh?"
+#: includes/admin/views/metaboxes/field-types/braintree-plans.php:34
+msgid "Use default plan"
 msgstr ""
 
-#: includes/class-charitable-extension-activation.php:87
+#: includes/admin/views/metaboxes/field-types/braintree-plans.php:45
+msgid " - default"
+msgstr ""
+
+#: includes/admin/views/metaboxes/field-types/braintree-plans.php:58
+#: includes/admin/views/settings/braintree-plans.php:42
+#. translators: %1$s: link to Braintree; %2$d: billing frequency number
+msgid ""
+"<a href=\"%1$s\" target=\"_blank\">Create a plan in Braintree</a> and set "
+"the billing cycle to repeat <strong>every %2$d month</strong>."
+msgid_plural ""
+"<a href=\"%1$s\" target=\"_blank\">Create a plan in Braintree</a> and set "
+"the billing cycle to repeat <strong>every %2$d months</strong>."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/views/settings/braintree-plans.php:25
+msgid "Select a plan"
+msgstr ""
+
+#: includes/class-charitable-braintree.php:373
+msgid "Cloning this object is forbidden."
+msgstr ""
+
+#: includes/class-charitable-braintree.php:388
+msgid "Unserializing instances of this class is forbidden."
+msgstr ""
+
+#: includes/fields/class-charitable-braintree-fields.php:48
+msgid "Braintree Recurring Billing Live Plan"
+msgstr ""
+
+#: includes/fields/class-charitable-braintree-fields.php:65
+msgid "Braintree Recurring Billing Test Plan"
+msgstr ""
+
+#: includes/gateway/class-charitable-braintree-gateway-processor-one-time.php:57
+msgid "Unable to set up customer in the Braintree Vault."
+msgstr ""
+
+#: includes/gateway/class-charitable-braintree-gateway-processor-one-time.php:67
+msgid "Unable to add payment method."
+msgstr ""
+
+#: includes/gateway/class-charitable-braintree-gateway-processor-one-time.php:120
+msgid "Donation not processed successfully in payment gateway."
+msgstr ""
+
+#: includes/gateway/class-charitable-braintree-gateway-processor-one-time.php:134
+#: includes/gateway/class-charitable-braintree-webhook-processor.php:219
+#. translators: %s: link to Braintree transaction details
+msgid "Braintree transaction: %s"
+msgstr ""
+
+#: includes/gateway/class-charitable-braintree-gateway-processor-recurring.php:92
+msgid "ERROR: Unable to create recurring donation without default plan."
+msgstr ""
+
+#: includes/gateway/class-charitable-braintree-gateway-processor-recurring.php:147
+msgid "Subscription not processed successfully in payment gateway."
+msgstr ""
+
+#: includes/gateway/class-charitable-braintree-gateway-processor-recurring.php:161
+#. translators: %s: link to Braintree subscription details
+msgid "Braintree subscription: %s"
+msgstr ""
+
+#: includes/gateway/class-charitable-braintree-gateway-processor-recurring.php:178
+#. translators: %1$s: error message; %2$s: error code
+msgid "Donation failed to process with error: %1$s [%2$s]"
+msgstr ""
+
+#: includes/gateway/class-charitable-braintree-webhook-processor.php:72
+msgid "Invalid Braintree event."
+msgstr ""
+
+#: includes/gateway/class-charitable-braintree-webhook-processor.php:143
+#. translators: %s: error message
+msgid "Webhook processing error: %s"
+msgstr ""
+
+#: includes/gateway/class-charitable-braintree-webhook-processor.php:159
+#: includes/gateway/class-charitable-braintree-webhook-processor.php:183
+#: includes/gateway/class-charitable-braintree-webhook-processor.php:240
+#: includes/gateway/class-charitable-braintree-webhook-processor.php:264
+#: includes/gateway/class-charitable-braintree-webhook-processor.php:305
+msgid ""
+"Subscription Webhook: Unable to process without Charitable Recurring "
+"extension."
+msgstr ""
+
+#: includes/gateway/class-charitable-braintree-webhook-processor.php:165
+#: includes/gateway/class-charitable-braintree-webhook-processor.php:189
+#: includes/gateway/class-charitable-braintree-webhook-processor.php:246
+#: includes/gateway/class-charitable-braintree-webhook-processor.php:270
+#: includes/gateway/class-charitable-braintree-webhook-processor.php:311
+msgid "Subscription Webhook: No matching subscription found."
+msgstr ""
+
+#: includes/gateway/class-charitable-braintree-webhook-processor.php:170
+#: includes/gateway/class-charitable-braintree-webhook-processor.php:317
+msgid "Subscription Webhook: Subscription marked as cancelled."
+msgstr ""
+
+#: includes/gateway/class-charitable-braintree-webhook-processor.php:197
+msgid "Subscription Webhook: First donation processed."
+msgstr ""
+
+#: includes/gateway/class-charitable-braintree-webhook-processor.php:202
+msgid "Subscription Webhook: Renewal donation processed."
+msgstr ""
+
+#: includes/gateway/class-charitable-braintree-webhook-processor.php:251
+msgid "Subscription Webhook: Subscription marked as active."
+msgstr ""
+
+#: includes/gateway/class-charitable-braintree-webhook-processor.php:286
+msgid "Payment for transaction %s failed. Braintree transaction: %s."
+msgstr ""
+
+#: includes/gateway/class-charitable-braintree-webhook-processor.php:292
+msgid "Subscription Webhook: Transaction payment failed."
+msgstr ""
+
+#: includes/gateway/class-charitable-braintree-webhook-processor.php:314
+msgid "Subscription has expired."
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:44
+#: includes/gateway/class-charitable-gateway-braintree.php:47
+msgid "Braintree"
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:86
+msgid "Live Mode Settings"
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:92
+msgid "Live Merchant ID"
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:98
+msgid "Live Public Key"
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:104
+msgid "Live Private Key"
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:110
+msgid "Live Merchant Account"
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:116
+msgid "Test Mode Settings"
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:122
+msgid "Test Merchant ID"
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:128
+msgid "Test Public Key"
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:134
+msgid "Test Private Key"
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:140
+msgid "Test Merchant Account"
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:153
+msgid "Recurring Billing"
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:160
+msgid "Default Live Plans"
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:163
+#: includes/gateway/class-charitable-gateway-braintree.php:171
+msgid ""
+"Select default Braintree plans to use for any subscriptions created by "
+"Charitable. You can override this on a per-campaign basis."
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:168
+msgid "Default Test Plans"
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:181
+msgid ""
+"<p>Charitable has not detected any incoming webhooks from Braintree. <a "
+"href=\"#\">Have you added your webhook and sent a test notification?</a></p>"
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:409
+#. translators: %s: merchant account id
+msgid "%s - default"
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:502
+msgid ""
+"Missing payment for Braintree payment gateway. Unable to proceed with "
+"payment."
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:640
+#. translators: %s: transaction reference.
+msgid "Braintree refund transaction ID: %s"
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:650
+#. translators: %s: error message.
+msgid "Braintree refund failed: %s"
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:707
+msgid "Subscription cancelled in Braintree."
+msgstr ""
+
+#: includes/gateway/class-charitable-gateway-braintree.php:714
+#. translators: %s: error message
+msgid "Braintree cancellation failed: %1$s [%2$s]"
+msgstr ""
+
+#: includes/admin/class-charitable-extension-activation.php:100
 msgctxt "Plugin requires Charitable! Please install/activate it to continue!"
 msgid "%s requires Charitable! Please %s to continue!"
 msgstr ""

@@ -55,13 +55,6 @@ module.exports = function(grunt) {
             }
         },
 
-        // Uglify Javascript to concat, minify, and make source maps.
-        uglify: {
-            dist: {
-                files: {}
-            }
-        },
-
         makepot: {
             target: {
                 options: {
@@ -133,6 +126,7 @@ module.exports = function(grunt) {
                     '!.git/**',
                     '!Gruntfile.js',
                     '!package.json',
+                    '!package-lock.json',
                     '!.gitignore',
                     '!tests/**',
                     '!**/Gruntfile.js',
