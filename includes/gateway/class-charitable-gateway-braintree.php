@@ -323,25 +323,6 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		}
 
 		/**
-		 * Return the merchant account id to use for a transaction.
-		 *
-		 * @since  1.0.0
-		 *
-		 * @param  boolean|null $test_mode Whether to get test mode keys. If null, this
-		 *                                 will use the current site Test Mode setting.
-		 * @return string
-		 */
-		public function get_merchant_account_id( $test_mode = null ) {
-			if ( is_null( $test_mode ) ) {
-				$test_mode = charitable_get_option( 'test_mode' );
-			}
-
-			$prefix = $test_mode ? 'test' : 'live';
-
-			return trim( $this->get_value( $prefix . '_merchant_account_id' ) );
-		}
-
-		/**
 		 * Return the Braintree_Gateway instance.
 		 *
 		 * @since  1.0.0
