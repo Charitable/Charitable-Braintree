@@ -27,13 +27,22 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		const ID = 'braintree';
 
 		/**
-		 * Flags whether the gateway requires credit card fields added to the donation form.
+		 * Live mode gateway instance.
 		 *
 		 * @since 1.0.0
 		 *
-		 * @var   boolean
+		 * @var   Braintree_Gateway|false
 		 */
-		protected $credit_card_form;
+		private $braintree_live;
+
+		/**
+		 * Test mode gateway instance.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @var   Braintree_Gateway|false
+		 */
+		private $braintree_test;
 
 		/**
 		 * Instantiate the gateway class, defining its key values.
@@ -338,22 +347,30 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 				$test_mode = charitable_get_option( 'test_mode' );
 			}
 
-			if ( empty( $keys ) ) {
-				$keys = $this->get_keys( $test_mode );
+			$prop = $test_mode ? 'braintree_test' : 'braintree_live';
+
+			if ( ! isset( $this->$prop ) ) {
+				if ( empty( $keys ) ) {
+					$keys = $this->get_keys( $test_mode );
+				}
+
+				if ( empty( $keys['merchant_id'] ) || empty( $keys['public_key'] ) || empty( $keys['private_key'] ) ) {
+					$this->$prop = false;
+
+					return false;
+				}
+
+				$this->$prop = new Braintree_Gateway(
+					[
+						'environment' => $test_mode ? 'sandbox' : 'production',
+						'merchantId'  => $keys['merchant_id'],
+						'publicKey'   => $keys['public_key'],
+						'privateKey'  => $keys['private_key'],
+					]
+				);
 			}
 
-			if ( empty( $keys['merchant_id'] ) || empty( $keys['public_key'] ) || empty( $keys['private_key'] ) ) {
-				return false;
-			}
-
-			return new Braintree_Gateway(
-				[
-					'environment' => $test_mode ? 'sandbox' : 'production',
-					'merchantId'  => $keys['merchant_id'],
-					'publicKey'   => $keys['public_key'],
-					'privateKey'  => $keys['private_key'],
-				]
-			);
+			return $this->$prop;
 		}
 
 		/**
@@ -457,7 +474,16 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 			$meta_postfix = $test_mode ? 'test' : 'live';
 			$customer_id  = get_metadata( 'donor', $donor_id, 'braintree_customer_id_' . $meta_postfix, true );
 
-			return $customer_id ? $customer_id : false;
+			if ( ! $customer_id ) {
+				return false;
+			}
+
+			try {
+				$this->get_gateway_instance( $test_mode )->customer()->find( $customer_id );
+				return $customer_id;
+			} catch ( Braintree_Exception_NotFound $e ) {
+				return false;
+			}
 		}
 
 		/**
