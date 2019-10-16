@@ -136,3 +136,34 @@ function charitable_braintree_get_new_plan_link( $test_mode ) {
 		$merchant_id
 	);
 }
+
+/**
+ * Direct link to create a new merchant account in Braintree.
+ *
+ * @since  1.0.0
+ *
+ * @param  boolean $test_mode Whether to get the sandbox or live link.
+ * @return string
+ */
+function charitable_braintree_get_new_merchant_account_link( $test_mode ) {
+	if ( $test_mode ) {
+		$base_url    = 'https://sandbox.braintreegateway.com';
+		$merchant_id = charitable_get_option( [ 'gateways_braintree', 'test_merchant_id' ] );
+		$extension   = 'new_for_sandbox';
+	} else {
+		$base_url    = 'https://www.braintreegateway.com';
+		$merchant_id = charitable_get_option( [ 'gateways_braintree', 'live_merchant_id' ] );
+		$extension   = 'new_for_production';
+	}
+
+	if ( empty( $merchant_id ) ) {
+		return $base_url;
+	}
+
+	return sprintf(
+		'%1$s/merchants/%2$s/merchant_accounts/%3$s',
+		$base_url,
+		$merchant_id,
+		$extension
+	);
+}

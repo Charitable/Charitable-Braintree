@@ -120,6 +120,11 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 						'priority' => 8,
 						'class'    => 'wide',
 						'options'  => $this->get_merchant_accounts( false ),
+						'help'     => sprintf(
+							/* translators: %s: link to create new merchant account */
+							__( 'Create a new <a href="%s" target="_blank">merchant account in Braintree</a>.', 'charitable-braintree' ),
+							charitable_braintree_get_new_merchant_account_link( false )
+						),
 					],
 					'section_test_mode'        => [
 						'title'    => __( 'Test Mode Settings', 'charitable-braintree' ),
@@ -150,6 +155,11 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 						'priority' => 14,
 						'class'    => 'wide',
 						'options'  => $this->get_merchant_accounts( true ),
+						'help'     => sprintf(
+							/* translators: %s: link to create new merchant account */
+							__( 'Create a new <a href="%s" target="_blank">merchant account in Braintree</a>.', 'charitable-braintree' ),
+							charitable_braintree_get_new_merchant_account_link( true )
+						),
 					],
 				]
 			);
@@ -378,9 +388,9 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 *
 		 * @since  1.0.0
 		 *
-		 * @param  boolean $test_mode Whether to return merchant accounts for sandbox or live.
-		 * @param  array   $keys      If set, will use these keys for getting the instance.
-		 *                            Otherwise, will use get_keys().
+		 * @param  boolean|int $test_mode Whether to return merchant accounts for sandbox or live.
+		 * @param  array       $keys      If set, will use these keys for getting the instance.
+		 *                                Otherwise, will use get_keys().
 		 * @return string[]
 		 */
 		public function get_merchant_accounts( $test_mode, $keys = [] ) {

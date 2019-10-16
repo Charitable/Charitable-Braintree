@@ -100,7 +100,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 
 				$transaction_data['lineItems'][] = [
 					'kind'        => 'debit',
-					'name'        => $campaign_donation->campaign_name,
+					'name'        => substr( $campaign_donation->campaign_name, 0, 35 ),
 					'productCode' => $campaign_donation->campaign_id,
 					'quantity'    => 1,
 					'totalAmount' => $amount,
@@ -116,8 +116,19 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 				$result = $this->braintree->transaction()->sale( $transaction_data );
 
 				if ( ! $result->success ) {
+					// error_log(__METHOD__);
 					error_log( var_export( $result->errors->deepAll(), true ) );
 					charitable_get_notices()->add_error( __( 'Donation not processed successfully in payment gateway.', 'charitable-braintree' ) );
+					$errors = '<ul>';
+
+					foreach ( $result->errors->deepAll() as $error ) {
+						$errors .= sprintf( '<li>%1$s (%2$s)</li>', $error->message, $error->code );
+					}
+
+					$errors .= '</ul>';
+
+					charitable_get_notices()->add_error( $errors );
+
 					return false;
 				}
 

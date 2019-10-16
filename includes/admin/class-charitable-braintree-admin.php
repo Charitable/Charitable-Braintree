@@ -263,8 +263,19 @@ if ( ! class_exists( 'Charitable_Braintree_Admin' ) ) :
 				wp_send_json_error( __( 'Nonce verification failed.', 'charitable-braintree' ) );
 			};
 
-			$gateway  = new Charitable_Gateway_Braintree();
-			$accounts = $gateway->get_merchant_accounts( $_POST['test_mode'], charitable_array_subset( $_POST, [ 'merchant_id', 'public_key', 'private_key' ] ) );
+			$gateway   = new Charitable_Gateway_Braintree();
+			$test_mode = 'true' === $_POST['test_mode'];
+			$accounts  = $gateway->get_merchant_accounts( $test_mode, charitable_array_subset( $_POST, [ 'merchant_id', 'public_key', 'private_key' ] ) );
+
+			if ( empty( $accounts ) ) {
+				wp_send_json_error(
+					sprintf(
+						/* translators: %s: link to create new merchant account */
+						__( '<div class="charitable-settings-notice" style="margin-top: 0;">No merchant accounts found. Create a new <a href="%s" target="_blank">merchant account in Braintree</a>.</div>', 'charitable-braintree' ),
+						charitable_braintree_get_new_merchant_account_link( $test_mode )
+					)
+				);
+			}
 
 			ob_start();
 
