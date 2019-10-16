@@ -213,11 +213,51 @@ if ( ! class_exists( 'Charitable_Braintree_Admin' ) ) :
 				return $values;
 			}
 
-			if ( ! isset( $old_values['gateways_braintree']['webhook_endpoint_status'] ) ) {
-				return $values;
+			$settings = $values['gateways_braintree'];
+
+			/* Save the webhook endpoint status. */
+			if ( isset( $old_values['gateways_braintree']['webhook_endpoint_status'] ) ) {
+				$settings['webhook_endpoint_status'] = $old_values['gateways_braintree']['webhook_endpoint_status'];
 			}
 
-			$values['gateways_braintree']['webhook_endpoint_status'] = $old_values['gateways_braintree']['webhook_endpoint_status'];
+			$merchant_account_settings = [
+				'test_merchant_account_id' => [
+					'test_mode'   => true,
+					'dba_setting' => 'test_merchant_account_dba_name',
+				],
+				// 'live_merchant_account_id' => [
+				// 	'test_mode'   => false,
+				// 	'dba_setting' => 'live_merchant_account_dba_name',
+				// ],
+			];
+
+			$gateway = new Charitable_Gateway_Braintree();
+
+			/* If the merchant account has changed, stash the dbaName. */
+			foreach ( $merchant_account_settings as $key => $args ) {
+				$dba_setting     = $args['dba_setting'];
+				$old_merchant_id = array_key_exists( $key, $old_values['gateways_braintree'] ) ? $old_values['gateways_braintree'][ $key ] : '';
+
+				/* Missing a merchant account id. */
+				if ( ! isset( $settings[ $key ] ) || empty( $settings[ $key ] ) ) {
+					$settings[ $key ]         = '';
+					$settings[ $dba_setting ] = '';
+					continue;
+				}
+
+				if ( $old_values['gateways_braintree'][ $key ] != $settings[ $key ] ) {
+					$account = $gateway->get_merchant_account( $settings[ $key ], $args['test_mode'] );
+					if ( ! is_null( $account ) && isset( $account->businessDetails ) ) {
+						$settings[ $dba_setting ] = $account->businessDetails->dbaName;
+					} else {
+						$settings[ $dba_setting ] = '';
+					}
+				} else {
+					$settings[ $dba_setting ] = $old_values['gateways_braintree'][ $dba_setting ];
+				}
+			}
+
+			$values['gateways_braintree'] = $settings;
 
 			return $values;
 		}
@@ -271,7 +311,8 @@ if ( ! class_exists( 'Charitable_Braintree_Admin' ) ) :
 				wp_send_json_error(
 					sprintf(
 						/* translators: %s: link to create new merchant account */
-						__( '<div class="charitable-settings-notice" style="margin-top: 0;">No merchant accounts found. Create a new <a href="%s" target="_blank">merchant account in Braintree</a>.</div>', 'charitable-braintree' ),
+						__( '<div class="charitable-settings-notice" style="margin-top: 0;">No merchant accounts found for your currency (%1$s). Create a new <a href="%2$s" target="_blank">merchant account in Braintree</a>.</div>', 'charitable-braintree' ),
+						charitable_get_currency(),
 						charitable_braintree_get_new_merchant_account_link( $test_mode )
 					)
 				);

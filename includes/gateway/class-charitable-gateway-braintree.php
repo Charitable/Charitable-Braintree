@@ -388,9 +388,9 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 *
 		 * @since  1.0.0
 		 *
-		 * @param  boolean|int $test_mode Whether to return merchant accounts for sandbox or live.
-		 * @param  array       $keys      If set, will use these keys for getting the instance.
-		 *                                Otherwise, will use get_keys().
+		 * @param  boolean $test_mode Whether to return merchant accounts for sandbox or live.
+		 * @param  array   $keys      If set, will use these keys for getting the instance.
+		 *                            Otherwise, will use get_keys().
 		 * @return string[]
 		 */
 		public function get_merchant_accounts( $test_mode, $keys = [] ) {
@@ -431,6 +431,42 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 			}
 
 			return $options;
+		}
+
+		/**
+		 * Return a particular merchant account.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  string  $merchant_account_id The merchant account id.
+		 * @param  boolean $test_mode           Whether to return merchant accounts for sandbox or live.
+		 * @param  array   $keys                If set, will use these keys for getting the instance.
+		 *                                      Otherwise, will use get_keys().
+		 * @return Braintree\MerchantAccount|null
+		 */
+		public function get_merchant_account( $merchant_account_id, $test_mode, $keys = [] ) {
+			$braintree = $this->get_gateway_instance( $test_mode, $keys );
+
+			if ( ! $braintree ) {
+				error_log( 'missing braintree' );
+				return null;
+			}
+
+			error_log( $merchant_account_id );
+
+			try {
+				$merchant_account = $braintree->merchantAccount()->find( $merchant_account_id );
+				error_log(get_class($merchant_account));
+				return $merchant_account;
+			} catch ( Exception $e ) {
+				error_log( var_export( $e, true ) );
+				if ( defined( 'CHARITABLE_DEBUG' ) && CHARITABLE_DEBUG ) {
+					error_log( get_class( $e ) );
+					error_log( $e->getMessage() . ' [' . $e->getCode() . ']' );
+				}
+
+				return null;
+			}
 		}
 
 		/**
