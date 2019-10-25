@@ -139,7 +139,7 @@
 	 */
 	$( document ).ready( function() {
 		if ( $( '#charitable_settings_gateways_braintree_live_merchant_account_id' ).length ) {
-			Braintree_Merchant_Account_Settings(
+			new Braintree_Merchant_Account_Settings(
 				false,
 				$( '#charitable_settings_gateways_braintree_live_merchant_account_id' ),
 				$( '#charitable_settings_gateways_braintree_live_merchant_id' ),
@@ -147,7 +147,7 @@
 				$( '#charitable_settings_gateways_braintree_live_private_key' )
 			);
 
-			Braintree_Merchant_Account_Settings(
+			new Braintree_Merchant_Account_Settings(
 				true,
 				$( '#charitable_settings_gateways_braintree_test_merchant_account_id' ),
 				$( '#charitable_settings_gateways_braintree_test_merchant_id' ),

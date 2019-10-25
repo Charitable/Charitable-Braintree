@@ -448,18 +448,12 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 			$braintree = $this->get_gateway_instance( $test_mode, $keys );
 
 			if ( ! $braintree ) {
-				error_log( 'missing braintree' );
 				return null;
 			}
 
-			error_log( $merchant_account_id );
-
 			try {
-				$merchant_account = $braintree->merchantAccount()->find( $merchant_account_id );
-				error_log(get_class($merchant_account));
-				return $merchant_account;
+				return $braintree->merchantAccount()->find( $merchant_account_id );
 			} catch ( Exception $e ) {
-				error_log( var_export( $e, true ) );
 				if ( defined( 'CHARITABLE_DEBUG' ) && CHARITABLE_DEBUG ) {
 					error_log( get_class( $e ) );
 					error_log( $e->getMessage() . ' [' . $e->getCode() . ']' );
