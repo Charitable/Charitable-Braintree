@@ -24,7 +24,7 @@ $new_plan_link = charitable_braintree_get_new_plan_link( $view_args['test_mode']
 		<?php foreach ( charitable_braintree_get_billing_periods() as $period ) : ?>
 			<?php $period_plans = $plans->get_plans_by_period( $period, true, __( 'Select a plan', 'charitable-braintree' ) ); ?>
 			<tr>
-				<th><?php echo ucfirst( charitable_recurring_get_donation_period_adverb( $period ) ); ?></th>
+				<th><?php //echo ucfirst( charitable_recurring_get_donation_period_adverb( $period ) ); ?></th>
 				<td>
 					<?php if ( count( $period_plans ) ) : ?>
 						<select name="charitable_settings[<?php echo esc_attr( $view_args['name'] ); ?>][<?php echo esc_attr( $period ); ?>]">
