@@ -121,11 +121,11 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 						'paymentMethodToken' => $payment_method,
 						'price'              => array_sum( $details['amount'] ),
 						'descriptor'         => [
-							'name' => substr(
+							'name' => $name = substr(
 								sprintf(
 									'%s*%s',
-									get_option( 'blogname' ),
-									implode( ',', $details['campaigns'] )
+									__( 'Donated', 'charitable-braintree' ),
+									substr( $details['campaigns'], 0, 9 )
 								),
 								0,
 								22
