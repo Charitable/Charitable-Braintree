@@ -121,11 +121,11 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 						'paymentMethodToken' => $payment_method,
 						'price'              => array_sum( $details['amount'] ),
 						'descriptor'         => [
-							'name' => substr(
+							'name' => $name = substr(
 								sprintf(
 									'%s*%s',
-									get_option( 'blogname' ),
-									$details['campaigns']
+									__( 'Donated', 'charitable-braintree' ),
+									$campaign_donation->campaign_name
 								),
 								0,
 								22
@@ -135,9 +135,6 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 						'merchantAccountId'  => $this->get_merchant_account_id(),
 					]
 				);
-
-
-				error_log( print_r( $data, true ) . "\n", 3, WP_CONTENT_DIR . '/debug_new.log' );
 
 				try {
 					$result = $this->braintree->subscription()->create( $data );

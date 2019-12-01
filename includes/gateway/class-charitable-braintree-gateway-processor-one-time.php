@@ -84,7 +84,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 						sprintf(
 							'%s*%s',
 							__( 'Donated', 'charitable-braintree' ),
-							substr( $this->donation->get_campaigns_donated_to(), 0, 9 )
+							$this->donation->get_campaigns_donated_to()
 						),
 						0,
 						22

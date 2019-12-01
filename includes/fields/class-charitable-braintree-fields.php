@@ -111,10 +111,13 @@ if ( ! class_exists( 'Charitable_Braintree_Fields' ) ) :
 			}
 
 			if ( $fallback_to_default ) {
-				$plans = array_merge(
-					charitable_get_option( [ 'gateways_braintree', 'default_live_plans' ] ),
-					$plans
-				);
+				$default_plans = charitable_get_option( [ 'gateways_braintree', 'default_live_plans' ] );
+				if ( ! empty( $default_plans ) ) {
+					$plans = array_merge(
+						$default_plans,
+						$plans
+					);
+				}
 			}
 
 			return $plans;
@@ -137,10 +140,14 @@ if ( ! class_exists( 'Charitable_Braintree_Fields' ) ) :
 			}
 
 			if ( $fallback_to_default ) {
-				$plans = array_merge(
-					charitable_get_option( [ 'gateways_braintree', 'default_test_plans' ] ),
-					array_filter( $plans )
-				);
+				$default_plans = charitable_get_option( [ 'gateways_braintree', 'default_test_plans' ] );
+
+				if ( ! empty( $default_plans ) ) {
+					$plans = array_merge(
+						$default_plans,
+						array_filter( $plans )
+					);
+				}
 			}
 
 			return $plans;
