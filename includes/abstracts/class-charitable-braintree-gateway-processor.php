@@ -282,6 +282,43 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 
 			return trim( $this->gateway->get_value( $prefix . '_merchant_account_id' ) );
 		}
+
+		/**
+		 * Return the string after removing the special char from it
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param string $name String from which special char need to be removed.
+		 *
+		 * @return string $name String after special char need is been removed.
+		 */
+		public function remove_special_character( $name ) {
+			return preg_replace( '/[^A-Za-z0-9 ]/', '', $name );
+		}
+
+		/**
+		 * Return the subscription data descriptor name
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param string $campaign_name Name of the Campaign for which user is donating.
+		 *
+		 * @return string $name Subscription Descriptor Name
+		 */
+		public function subscription_descriptor_name( $campaign_name ) {
+			$blog_name = 	   $this->remove_special_character( get_option( 'blogname' ) );
+			$blog_char_limit = strlen( $blog_name );
+			$blog_char_limit = $blog_char_limit >= 12 ? 12 : $blog_char_limit >= 7 ? 7 : 3;
+			$blog_name = 	   substr( $blog_name, 0, $blog_char_limit );
+
+			$name = sprintf(
+				'%s*%s',
+				$blog_name,
+				$this->remove_special_character( $campaign_name )
+			);
+			$name = substr( $name, 0, 22 );
+			return $name;
+		}
 	}
 
 endif;

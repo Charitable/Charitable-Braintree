@@ -71,34 +71,26 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 			/**
 			 * Prepare sale transaction data.
 			 */
-			$transaction_data = [
+			$transaction_data = array(
 				'amount'            => number_format( $this->donation->get_total_donation_amount( true ), 2 ),
 				'orderId'           => (string) $this->donation->get_donation_id(),
 				'customerId'        => $customer_id,
-				'options'           => [
+				'options'           => array(
 					'submitForSettlement' => true,
-				],
+				),
 				'channel'           => 'Charitable_SP',
-				'descriptor'        => [
-					'name' => $name = substr(
-						sprintf(
-							'%s*%s',
-							__( 'Donated', 'charitable-braintree' ),
-							$this->donation->get_campaigns_donated_to()
-						),
-						0,
-						22
-					),
+				'descriptor'        => array(
+					'name' => $this->subscription_descriptor_name( $this->donation->get_campaigns_donated_to() ),
 					'url'  => substr( $url_parts['host'], 0, 13 ),
-				],
-				'lineItems'         => [],
+				),
+				'lineItems'         => array(),
 				'merchantAccountId' => $this->get_merchant_account_id(),
-			];
+			);
 
 			foreach ( $this->donation->get_campaign_donations() as $campaign_donation ) {
 				$amount = Charitable_Currency::get_instance()->sanitize_monetary_amount( (string) $campaign_donation->amount, true );
 
-				$transaction_data['lineItems'][] = [
+				$transaction_data['lineItems'][] = array(
 					'kind'        => 'debit',
 					'name'        => substr( $campaign_donation->campaign_name, 0, 35 ),
 					'productCode' => $campaign_donation->campaign_id,
@@ -106,7 +98,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 					'totalAmount' => $amount,
 					'unitAmount'  => $amount,
 					'url'         => get_permalink( $campaign_donation->campaign_id ),
-				];
+				);
 			}
 
 			/**
