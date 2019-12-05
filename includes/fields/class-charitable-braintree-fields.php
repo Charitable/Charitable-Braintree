@@ -92,7 +92,7 @@ if ( ! class_exists( 'Charitable_Braintree_Fields' ) ) :
 			return array_merge( $fields, $braintree_fields );
 		}
 
-				/**
+		/**
 		 * Return the recurring billing plan to use for a campaign.
 		 *
 		 * @since  1.0.0
