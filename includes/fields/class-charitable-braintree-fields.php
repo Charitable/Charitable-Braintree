@@ -92,12 +92,13 @@ if ( ! class_exists( 'Charitable_Braintree_Fields' ) ) :
 			return array_merge( $fields, $braintree_fields );
 		}
 
-		/**
+				/**
 		 * Return the recurring billing plan to use for a campaign.
 		 *
 		 * @since  1.0.0
 		 *
 		 * @param  Charitable_Campaign $campaign The campaign object.
+		 *
 		 * @return string
 		 */
 		public function get_recurring_billing_plans_for_campaign_live( Charitable_Campaign $campaign, $fallback_to_default = true ) {
@@ -126,6 +127,7 @@ if ( ! class_exists( 'Charitable_Braintree_Fields' ) ) :
 		 * @since  1.0.0
 		 *
 		 * @param  Charitable_Campaign $campaign The campaign object.
+		 *
 		 * @return string
 		 */
 		public function get_recurring_billing_plans_for_campaign_test( Charitable_Campaign $campaign, $fallback_to_default = true ) {
@@ -137,10 +139,11 @@ if ( ! class_exists( 'Charitable_Braintree_Fields' ) ) :
 
 			if ( $fallback_to_default ) {
 				$default_plans = charitable_get_option( array( 'gateways_braintree', 'default_test_plans' ) );
+
 				if ( ! empty( $default_plans ) ) {
 					$plans = array_merge(
 						$default_plans,
-						$plans
+						array_filter( $plans )
 					);
 				}
 			}
