@@ -81,7 +81,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 			}
 
 			$url_parts = parse_url( home_url() );
-			$plans     = array();
+			$plans     = [];
 
 			foreach ( $this->donation->get_campaign_donations() as $campaign_donation ) {
 				$plan_id = $this->get_matching_plan_id( $campaign_donation->campaign_id );
@@ -95,10 +95,10 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 				}
 
 				if ( ! array_key_exists( $plan_id, $plans ) ) {
-					$plans[ $plan_id ] = array(
-						'campaigns' => array(),
-						'amounts'   => array(),
-					);
+					$plans[ $plan_id ] = [
+						'campaigns' => [],
+						'amounts'   => [],
+					];
 				}
 
 				$plans[ $plan_id ]['campaigns'][] = $campaign_donation->campaign_name;
@@ -116,16 +116,16 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 				 */
 				$data = apply_filters(
 					'charitable_braintree_subscription_data',
-					array(
+					[
 						'planId'             => $plan_id,
 						'paymentMethodToken' => $payment_method,
 						'price'              => array_sum( $details['amount'] ),
-						'descriptor'         => array(
+						'descriptor'         => [
 							'name' => $this->subscription_descriptor_name( $campaign_donation->campaign_name ),
 							'url'  => substr( $url_parts['host'], 0, 13 ),
-						),
+						],
 						'merchantAccountId'  => $this->get_merchant_account_id(),
-					)
+					]
 				);
 
 				try {
