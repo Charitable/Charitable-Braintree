@@ -225,10 +225,10 @@ if ( ! class_exists( 'Charitable_Braintree_Admin' ) ) :
 					'test_mode'   => true,
 					'dba_setting' => 'test_merchant_account_dba_name',
 				],
-				// 'live_merchant_account_id' => [
-				// 	'test_mode'   => false,
-				// 	'dba_setting' => 'live_merchant_account_dba_name',
-				// ],
+				'live_merchant_account_id' => [
+					'test_mode'   => false,
+					'dba_setting' => 'live_merchant_account_dba_name',
+				],
 			];
 
 			$gateway = new Charitable_Gateway_Braintree();
@@ -253,7 +253,9 @@ if ( ! class_exists( 'Charitable_Braintree_Admin' ) ) :
 						$settings[ $dba_setting ] = '';
 					}
 				} else {
-					$settings[ $dba_setting ] = $old_values['gateways_braintree'][ $dba_setting ];
+					$settings[ $dba_setting ] = array_key_exists( $dba_setting, $old_values['gateways_braintree'] )
+						? $old_values['gateways_braintree'][ $dba_setting ]
+						: '';
 				}
 			}
 
@@ -318,13 +320,15 @@ if ( ! class_exists( 'Charitable_Braintree_Admin' ) ) :
 				);
 			}
 
+			$key = 'true' == $_POST['test_mode'] ? 'test_merchant_account_id' : 'live_merchant_account_id';
+
 			ob_start();
 
 			charitable_admin_view(
 				'settings/select',
 				[
 					'options' => $accounts,
-					'key'     => [ 'gateways_braintree', $_POST['test_mode'] ? 'test_merchant_account_id' : 'live_merchant_account_id' ],
+					'key'     => [ 'gateways_braintree', $key ],
 					'name'    => substr( $_POST['field_name'], 20, -1 ),
 					'classes' => $_POST['field_classes'],
 				]
