@@ -4,7 +4,7 @@
  *
  * @author    Eric Daams
  * @package   Charitable Braintree/Admin Views/Settings
- * @copyright Copyright (c) 2019, Studio 164a
+ * @copyright Copyright (c) 2020, Studio 164a
  * @since     1.0.0
  * @version   1.0.0
  */

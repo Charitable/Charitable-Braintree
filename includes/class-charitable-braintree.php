@@ -5,7 +5,7 @@
  * The responsibility of this class is to load all the plugin's functionality.
  *
  * @package   Charitable Braintree
- * @copyright Copyright (c) 2019, Eric Daams
+ * @copyright Copyright (c) 2020, Eric Daams
  * @license   http://opensource.org/licenses/gpl-1.0.0.php GNU Public License
  * @version   1.0.0
  * @since     1.0.0

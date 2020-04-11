@@ -54,12 +54,15 @@
 		}
 
 		/**
-		 * Set up drop-in as soon as the form is initiailized.
+		 * Set up drop-in as soon as the form is initialized.
 		 */
 		var init = function( helper ) {
 			braintree.dropin.create( {
 				authorization: CHARITABLE_BRAINTREE_VARS.client_token,
-				container: '#charitable-braintree-dropin-container'
+				container: '#charitable-braintree-dropin-container',
+				paypal: {
+					flow: 'vault',
+				}
 			}, function ( createErr, instance ) {
 
 				/**
