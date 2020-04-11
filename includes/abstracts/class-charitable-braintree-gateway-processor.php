@@ -251,9 +251,32 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 		 *
 		 * @return string
 		 */
-		public function get_statement_descriptor() {
+		public function get_descriptor_name() {
+			$name     = '';
+			$company  = $this->sanitize_description( get_option( 'blogname' ) );
+			$campaign = $this->sanitize_description( $this->donation->get_campaigns_donated_to() );
+			$length   = strlen( $company );
+
+			$length_combinations = [
+				3  => 18,
+				7  => 14,
+				12 => 9,
+			];
+
+			foreach ( $length_combinations as $company_length => $product_length ) {
+				if ( $lenth <= $company_length || 12 === $company_length ) {
+					$name  = str_pad( $company, $company_length, '+' );
+					$name .= '*';
+					$name .= str_pad(
+						substr( $campaign, 0, $product_length ),
+						$product_length,
+						'+'
+					);
+				}
+			}
+
 			/**
-			 * Filter the statement_descriptor.
+			 * Filter the descriptor name.
 			 *
 			 * @since 1.0.0
 			 *
@@ -261,7 +284,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 			 * @param Charitable_Donation           $donation   The donation object.
 			 * @param Charitable_Donation_Processor $processor  The processor object.
 			 */
-			return apply_filters( 'charitable_braintree_statement_descriptor', substr( $this->donation->get_campaigns_donated_to(), 0, 22 ), $this->donation, $this->processor );
+			return apply_filters( 'charitable_braintree_descriptor_name', $name, $this->donation, $this->processor );
 		}
 
 		/**
@@ -281,6 +304,18 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 			$prefix = $test_mode ? 'test' : 'live';
 
 			return trim( $this->gateway->get_value( $prefix . '_merchant_account_id' ) );
+		}
+
+		/**
+		 * Sanitize the descriptor name, filtering out any invalid characters.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  string $descriptor The descriptor name.
+		 * @return string
+		 */
+		public function sanitize_description( $descriptor ) {
+			return preg_replace( '([^A-Za-z0-9.+-])', '+', $descriptor );
 		}
 	}
 

@@ -121,15 +121,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 						'paymentMethodToken' => $payment_method,
 						'price'              => array_sum( $details['amount'] ),
 						'descriptor'         => [
-							'name' => substr(
-								sprintf(
-									'%s*%s',
-									get_option( 'blogname' ),
-									implode( ',', $details['campaigns'] )
-								),
-								0,
-								22
-							),
+							'name' => $this->get_descriptor_name(),
 							'url'  => substr( $url_parts['host'], 0, 13 ),
 						],
 						'merchantAccountId'  => $this->get_merchant_account_id(),

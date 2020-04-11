@@ -68,6 +68,8 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 				return false;
 			}
 
+			error_log( $this->get_descriptor_name() );
+
 			/**
 			 * Prepare sale transaction data.
 			 */
@@ -80,15 +82,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 				],
 				'channel'           => 'Charitable_SP',
 				'descriptor'        => [
-					'name' => substr(
-						sprintf(
-							'%s*%s',
-							get_option( 'blogname' ),
-							$this->donation->get_campaigns_donated_to()
-						),
-						0,
-						22
-					),
+					'name' => $this->get_descriptor_name(),
 					'url'  => substr( $url_parts['host'], 0, 13 ),
 				],
 				'lineItems'         => [],
