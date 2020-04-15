@@ -63,9 +63,16 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 			}
 
 			/**
-			 * Create a customer in the Vault.
+			 * Get the customer id.
 			 */
-			$customer_id = $this->create_customer();
+			$customer_id = $this->gateway->get_braintree_customer_id();
+
+			if ( ! $customer_id ) {
+				/**
+				 * Create a customer in the Vault.
+				 */
+				$customer_id = $this->create_customer();
+			}
 
 			if ( ! $customer_id ) {
 				return false;

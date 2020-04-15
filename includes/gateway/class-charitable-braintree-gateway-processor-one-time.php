@@ -68,8 +68,6 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 				return false;
 			}
 
-			error_log( $this->get_descriptor_name() );
-
 			/**
 			 * Prepare sale transaction data.
 			 */
