@@ -166,6 +166,28 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 
 					if ( 'Active' == $result->subscription->status ) {
 						$this->recurring->update_status( 'charitable-active' );
+
+						/* Update the initial donation. */
+						$transaction = current( $result->subscription->transactions );
+
+						$transaction_url = sprintf(
+							'https://%sbraintreegateway.com/merchants/%s/transactions/%s',
+							charitable_get_option( 'test_mode' ) ? 'sandbox.' : '',
+							$keys['merchant_id'],
+							$transaction->id
+						);
+
+						$this->donation_log->add(
+							sprintf(
+								/* translators: %s: link to Braintree transaction details */
+								__( 'Braintree transaction: %s', 'charitable-braintree' ),
+								'<a href="' . $transaction_url . '" target="_blank"><code>' . $transaction->id . '</code></a>'
+							)
+						);
+
+						$this->donation->set_gateway_transaction_id( $transaction->id );
+
+						$this->donation->update_status( 'charitable-completed' );
 					}
 
 					return true;

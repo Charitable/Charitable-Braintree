@@ -640,7 +640,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 				return false;
 			}
 
-			return false !== $donation->get_gateway_transaction_id();
+			return false != $donation->get_gateway_transaction_id();
 		}
 
 		/**
@@ -672,7 +672,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 				$result = $braintree->transaction()->refund( $transaction );
 
 				update_post_meta( $donation_id, '_braintree_refunded', true );
-				update_post_meta( $donation_id, '_braintree_refund_id', $result->transaction->refundedTransactionId );
+				update_post_meta( $donation_id, '_braintree_refund_id', $result->transaction->id );
 
 				$refund_url = sprintf(
 					'https://%sbraintreegateway.com/merchants/%s/transactions/%s',
@@ -685,7 +685,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 					sprintf(
 						/* translators: %s: transaction reference. */
 						__( 'Braintree refund transaction ID: %s', 'charitable-braintree' ),
-						'<a href="' . $refund_url . '" target="_blank"><code>' . $result->transaction->refundedTransactionId . '</code></a></code>'
+						'<a href="' . $refund_url . '" target="_blank"><code>' . $result->transaction->id . '</code></a></code>'
 					)
 				);
 
