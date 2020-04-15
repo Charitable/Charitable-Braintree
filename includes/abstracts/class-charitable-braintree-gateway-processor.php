@@ -264,13 +264,13 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 			];
 
 			foreach ( $length_combinations as $company_length => $product_length ) {
-				if ( $lenth <= $company_length || 12 === $company_length ) {
-					$name  = str_pad( $company, $company_length, '+' );
+				if ( $length <= $company_length || 12 === $company_length ) {
+					$name  = str_pad( $company, $company_length, '*' );
 					$name .= '*';
 					$name .= str_pad(
 						substr( $campaign, 0, $product_length ),
 						$product_length,
-						'+'
+						'*'
 					);
 				}
 			}
@@ -315,7 +315,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 		 * @return string
 		 */
 		public function sanitize_description( $descriptor ) {
-			return preg_replace( '([^A-Za-z0-9.+-])', '+', $descriptor );
+			return preg_replace( '([^A-Za-z0-9.+-])', '*', $descriptor );
 		}
 	}
 
