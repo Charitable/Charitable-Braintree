@@ -132,7 +132,8 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 							'url'  => substr( $url_parts['host'], 0, 13 ),
 						],
 						'merchantAccountId'  => $this->get_merchant_account_id(),
-					]
+					],
+					$this
 				);
 
 				try {

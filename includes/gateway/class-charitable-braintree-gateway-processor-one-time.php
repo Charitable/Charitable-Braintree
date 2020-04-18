@@ -109,7 +109,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 			 * @param array                                  $transaction_data The transaction data.
 			 * @param Charitable_Braintree_Gateway_Processor $processor        This instance of `Charitable_Braintree_Gateway_Processor`.
 			 */
-			$transaction_data = apply_filters( 'charitable_braintree_transaction_data', $transaction_data, $processor );
+			$transaction_data = apply_filters( 'charitable_braintree_transaction_data', $transaction_data, $this );
 
 			/**
 			 * Create sale transaction in Braintree.

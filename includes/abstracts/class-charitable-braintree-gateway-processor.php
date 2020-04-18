@@ -96,6 +96,18 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 		}
 
 		/**
+		 * Get object property.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  string $prop The propery to get.
+		 * @return mixed
+		 */
+		public function __get( $prop ) {
+			return $this->$prop;
+		}
+
+		/**
 		 * Set Braintree API key.
 		 *
 		 * @since  1.0.0
