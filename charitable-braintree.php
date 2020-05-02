@@ -3,11 +3,11 @@
  * Plugin Name:       Charitable - Braintree
  * Plugin URI:
  * Description:
- * Version:           1.0.0-alpha.5
+ * Version:           1.0.0-alpha.6
  * Author:            WP Charitable
  * Author URI:        https://www.wpcharitable.com
  * Requires at least: 5.0
- * Tested up to:      5.3.2
+ * Tested up to:      5.4.1
  *
  * Text Domain: charitable-braintree
  * Domain Path: /languages/

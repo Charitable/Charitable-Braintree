@@ -2,9 +2,9 @@
 # This file is distributed under the same license as the Charitable - Braintree package.
 msgid ""
 msgstr ""
-"Project-Id-Version: Charitable - Braintree 1.0.0-alpha.5\n"
+"Project-Id-Version: Charitable - Braintree 1.0.0-alpha.6\n"
 "Report-Msgid-Bugs-To: https://www.wpcharitable.com/\n"
-"POT-Creation-Date: 2020-03-13 00:21:29+00:00\n"
+"POT-Creation-Date: 2020-05-02 11:08:44+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -104,17 +104,18 @@ msgstr ""
 msgid "Unable to add payment method."
 msgstr ""
 
-#: includes/gateway/class-charitable-braintree-gateway-processor-one-time.php:121
+#: includes/gateway/class-charitable-braintree-gateway-processor-one-time.php:123
 msgid "Donation not processed successfully in payment gateway."
 msgstr ""
 
-#: includes/gateway/class-charitable-braintree-gateway-processor-one-time.php:145
+#: includes/gateway/class-charitable-braintree-gateway-processor-one-time.php:147
+#: includes/gateway/class-charitable-braintree-gateway-processor-recurring.php:184
 #: includes/gateway/class-charitable-braintree-webhook-processor.php:219
 #. translators: %s: link to Braintree transaction details
 msgid "Braintree transaction: %s"
 msgstr ""
 
-#: includes/gateway/class-charitable-braintree-gateway-processor-recurring.php:92
+#: includes/gateway/class-charitable-braintree-gateway-processor-recurring.php:99
 msgid "ERROR: Unable to create recurring donation without default plan."
 msgstr ""
 
@@ -127,7 +128,7 @@ msgstr ""
 msgid "Braintree subscription: %s"
 msgstr ""
 
-#: includes/gateway/class-charitable-braintree-gateway-processor-recurring.php:178
+#: includes/gateway/class-charitable-braintree-gateway-processor-recurring.php:200
 #. translators: %1$s: error message; %2$s: error code
 msgid "Donation failed to process with error: %1$s [%2$s]"
 msgstr ""
