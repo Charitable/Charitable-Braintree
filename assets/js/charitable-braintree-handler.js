@@ -60,6 +60,7 @@
 			braintree.dropin.create( {
 				authorization: CHARITABLE_BRAINTREE_VARS.client_token,
 				container: '#charitable-braintree-dropin-container',
+				venmo: {},
 				paypal: {
 					flow: 'vault',
 				}
