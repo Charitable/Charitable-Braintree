@@ -57,14 +57,22 @@
 		 * Set up drop-in as soon as the form is initialized.
 		 */
 		var init = function( helper ) {
-			braintree.dropin.create( {
+			var config = {
 				authorization: CHARITABLE_BRAINTREE_VARS.client_token,
-				container: '#charitable-braintree-dropin-container',
-				venmo: {},
-				paypal: {
-					flow: 'vault',
-				}
-			}, function ( createErr, instance ) {
+				container: '#charitable-braintree-dropin-container'
+			};
+
+			if ( "1" === CHARITABLE_BRAINTREE_VARS.paypal ) {
+				config.paypal = {
+					flow: 'vault'
+				};
+			}
+
+			if ( "1" === CHARITABLE_BRAINTREE_VARS.venmo ) {
+				config.venmo = {};
+			}
+
+			braintree.dropin.create( config, function ( createErr, instance ) {
 
 				/**
 				 * Validate form submission.
