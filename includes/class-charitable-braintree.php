@@ -26,7 +26,7 @@ if ( ! class_exists( 'Charitable_Braintree' ) ) :
 	class Charitable_Braintree {
 
 		/** Plugin version. */
-		const VERSION = '1.0.0-alpha.6';
+		const VERSION = '1.0.0-alpha.7';
 
 		/** The extension name. */
 		const NAME = 'Charitable Braintree';
