@@ -53,7 +53,7 @@ if ( ! class_exists( 'Charitable_Braintree_Fields' ) ) :
 						'type'           => 'braintree-plans',
 						'base_path'      => charitable_braintree()->get_path( 'includes', true ) . 'admin/views/',
 						'test_mode'      => false,
-						'priority'       => 26,
+						'priority'       => 40,
 						'value_callback' => function( Charitable_Campaign $campaign ) {
 							return $this->get_recurring_billing_plans_for_campaign_live( $campaign, false );
 						},
@@ -70,7 +70,7 @@ if ( ! class_exists( 'Charitable_Braintree_Fields' ) ) :
 						'type'           => 'braintree-plans',
 						'base_path'      => charitable_braintree()->get_path( 'includes', true ) . 'admin/views/',
 						'test_mode'      => true,
-						'priority'       => 26,
+						'priority'       => 41,
 						'value_callback' => function( Charitable_Campaign $campaign ) {
 							return $this->get_recurring_billing_plans_for_campaign_test( $campaign, false );
 						},

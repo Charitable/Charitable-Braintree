@@ -6,8 +6,9 @@
 	var Braintree_Plans = function() {
 		var $plans_el = $( '.charitable-braintree-plans-wrap' ),
 			$mode_el = $( '[name=_campaign_recurring_donation_mode]' ),
-			mode = $mode_el.val(),
-			$period_el = $( '[name=_campaign_recurring_donation_period]' )
+			$frequency_el = $( '[name=_campaign_recurring_donation_frequency_mode]' ),
+			mode = $frequency_el.val() === 'variable' ? 'variable' : $mode_el.val(),
+			$period_el = $( '[name=_campaign_recurring_donation_period]' ),
 			period = $period_el.val();
 
 		// Hide all plans.

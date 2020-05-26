@@ -174,7 +174,21 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 					'enable_venmo'            => [
 						'type'     => 'checkbox',
 						'title'    => __( 'Enable payment with Venmo', 'charitable-braintree' ),
-						'priority' => 21,
+						'priority' => 22,
+					],
+					'enable_googlepay'       => [
+						'type'     => 'checkbox',
+						'title'    => __( 'Enable payment with Google Pay', 'charitable-braintree' ),
+						'priority' => 23,
+					],
+					'googlepay_merchant_id'  => [
+						'type'     => 'text',
+						'title'    => __( 'Google Pay merchant ID', 'charitable-braintree' ),
+						'priority' => 23.5,
+						'attrs'    => [
+							'data-trigger-key'   => '#charitable_settings_gateways_braintree_enable_googlepay',
+							'data-trigger-value' => 'checked',
+						],
 					],
 				]
 			);
@@ -252,9 +266,11 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 				'charitable-braintree-handler',
 				'CHARITABLE_BRAINTREE_VARS',
 				[
-					'client_token' => $gateway->get_client_token(),
-					'paypal'       => (int) $gateway->get_value( 'enable_paypal' ),
-					'venmo'        => (int) $gateway->get_value( 'enable_venmo' ),
+					'client_token'          => $gateway->get_client_token(),
+					'paypal'                => (int) $gateway->get_value( 'enable_paypal' ),
+					'venmo'                 => (int) $gateway->get_value( 'enable_venmo' ),
+					'googlepay'             => (int) $gateway->get_value( 'enable_googlepay' ),
+					'googlepay_merchant_id' => $gateway->get_value( 'googlepay_merchant_id' ),
 				]
 			);
 

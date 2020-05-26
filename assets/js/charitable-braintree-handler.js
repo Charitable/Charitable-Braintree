@@ -43,14 +43,24 @@
 		 * Process the Braintree response.
 		 */
 		var process_response = function( response, helper ) {
-
 			if ( response.error ) {
 				helper.add_error( response.error.message );
 			} else {
 				helper.get_input( 'Braintree_token' ).val( response.id );
 				remove_pending_process( helper );
 			}
+		}
 
+		/**
+		 * Get the Google Pay config.
+		 */
+		var googlepay_transaction_info = function( helper ) {
+			return  {
+				totalPriceStatus: 'ESTIMATED',
+				totalPrice: helper.format_amount( helper.get_amount() ),
+				currencyCode: CHARITABLE_VARS.currency,
+				countryCode: CHARITABLE_VARS.country
+			};
 		}
 
 		/**
@@ -72,7 +82,25 @@
 				config.venmo = {};
 			}
 
+			if ( "1" === CHARITABLE_BRAINTREE_VARS.googlepay ) {
+				config.googlePay = {
+					googlePayVersion: 2,
+					transactionInfo: googlepay_transaction_info( helper ),
+				};
+
+				if ( "1" !== CHARITABLE_VARS.test_mode ) {
+					config.googlePay.merchantId = CHARITABLE_BRAINTREE_VARS.googlepay_merchant_id;
+				}
+			}
+
 			braintree.dropin.create( config, function ( createErr, instance ) {
+
+				/**
+				 * When the payment total changes, update Google Pay config.
+				 */
+				$body.on( 'charitable:form:total:changed', function( event, helper ) {
+					instance.updateConfiguration( 'googlePay', 'transactionInfo', googlepay_transaction_info( helper ) );
+				} );
 
 				/**
 				 * Validate form submission.
