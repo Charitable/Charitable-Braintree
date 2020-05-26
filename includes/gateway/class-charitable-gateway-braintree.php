@@ -176,15 +176,20 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 						'title'    => __( 'Enable payment with Venmo', 'charitable-braintree' ),
 						'priority' => 22,
 					],
+					'enable_applepay'        => [
+						'type'     => 'checkbox',
+						'title'    => __( 'Enable payment with Apple Pay', 'charitable-braintree' ),
+						'priority' => 23,
+					],
 					'enable_googlepay'       => [
 						'type'     => 'checkbox',
 						'title'    => __( 'Enable payment with Google Pay', 'charitable-braintree' ),
-						'priority' => 23,
+						'priority' => 24,
 					],
 					'googlepay_merchant_id'  => [
 						'type'     => 'text',
 						'title'    => __( 'Google Pay merchant ID', 'charitable-braintree' ),
-						'priority' => 23.5,
+						'priority' => 24.5,
 						'attrs'    => [
 							'data-trigger-key'   => '#charitable_settings_gateways_braintree_enable_googlepay',
 							'data-trigger-value' => 'checked',

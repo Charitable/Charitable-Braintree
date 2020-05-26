@@ -64,6 +64,19 @@
 		}
 
 		/**
+		 * Apple Pay payment request object.
+		 */
+		var applepay_payment_request = function( helper ) {
+			return {
+				total: {
+					label: '',
+					amount: helper.format_amount( helper.get_amount() )
+				},
+				requiredBillingContactFields: [ 'postalAddress' ]
+			};
+		}
+
+		/**
 		 * Set up drop-in as soon as the form is initialized.
 		 */
 		var init = function( helper ) {
@@ -85,12 +98,19 @@
 			if ( "1" === CHARITABLE_BRAINTREE_VARS.googlepay ) {
 				config.googlePay = {
 					googlePayVersion: 2,
-					transactionInfo: googlepay_transaction_info( helper ),
+					transactionInfo: googlepay_transaction_info( helper )
 				};
 
 				if ( "1" !== CHARITABLE_VARS.test_mode ) {
 					config.googlePay.merchantId = CHARITABLE_BRAINTREE_VARS.googlepay_merchant_id;
 				}
+			}
+
+			if ( "1" === CHARITABLE_BRAINTREE_VARS.applepay ) {
+				config.applePay = {
+					displayName: '',
+					paymentRequest: applepay_payment_request( helper ),
+				};
 			}
 
 			braintree.dropin.create( config, function ( createErr, instance ) {
@@ -100,6 +120,7 @@
 				 */
 				$body.on( 'charitable:form:total:changed', function( event, helper ) {
 					instance.updateConfiguration( 'googlePay', 'transactionInfo', googlepay_transaction_info( helper ) );
+					instance.updateConfiguration( 'applePay', 'paymentRequest', applepay_payment_request( helper ) );
 				} );
 
 				/**
@@ -133,7 +154,7 @@
 			} );
 		}
 
-		init();
+		init( helper );
 	}
 
 	/**
