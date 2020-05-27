@@ -69,8 +69,8 @@
 		var applepay_payment_request = function( helper ) {
 			return {
 				total: {
-					label: '',
-					amount: helper.format_amount( helper.get_amount() )
+					label: 'Test',
+					amount: '1.00'
 				},
 				requiredBillingContactFields: [ 'postalAddress' ]
 			};
@@ -108,7 +108,7 @@
 
 			if ( "1" === CHARITABLE_BRAINTREE_VARS.applepay ) {
 				config.applePay = {
-					displayName: '',
+					displayName: 'Test',
 					paymentRequest: applepay_payment_request( helper ),
 				};
 			}

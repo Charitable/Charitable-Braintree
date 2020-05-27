@@ -275,14 +275,19 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 			];
 
 			foreach ( $length_combinations as $company_length => $product_length ) {
-				if ( $length <= $company_length || 12 === $company_length ) {
-					$name  = str_pad( $company, $company_length, ' ' );
+				if ( $length <= $company_length || 12 <= $company_length ) {
+					$name    = str_pad(
+						substr( $company, 0, $company_length ),
+						$company_length,
+						' '
+					);
 					$name .= '*';
 					$name .= str_pad(
 						substr( $campaign, 0, $product_length ),
 						$product_length,
 						' '
 					);
+					break;
 				}
 			}
 

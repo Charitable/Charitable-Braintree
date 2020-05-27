@@ -274,6 +274,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 					'client_token'          => $gateway->get_client_token(),
 					'paypal'                => (int) $gateway->get_value( 'enable_paypal' ),
 					'venmo'                 => (int) $gateway->get_value( 'enable_venmo' ),
+					'applepay'              => (int) $gateway->get_value( 'enable_applepay' ),
 					'googlepay'             => (int) $gateway->get_value( 'enable_googlepay' ),
 					'googlepay_merchant_id' => $gateway->get_value( 'googlepay_merchant_id' ),
 				]
