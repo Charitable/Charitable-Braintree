@@ -70,7 +70,7 @@ function charitable_braintree_template( $template_name, array $args = array() ) 
 function charitable_braintree_get_billing_periods() {
 	return function_exists( 'charitable_recurring_get_donation_periods' )
 		? array_keys( charitable_recurring_get_donation_periods() )
-		: [ 'month' ];
+		: array_keys( charitable_recurring_get_donation_periods_i18n() );
 }
 
 /**

@@ -5,21 +5,10 @@
 	 */
 	var Braintree_Plans = function() {
 		var $plans_el = $( '.charitable-braintree-plans-wrap' );
-			// $mode_el = ( function() {
-			// 	var el = $( '[name=_campaign_recurring_donation_mode][type=select]' );
-			// 	if ( el.length === 0 ) {
-			// 		el = $( '[name=_campaign_recurring_donation_mode][type=radio]:checked' );
-			// 	}
-			// 	return el;
-			// } )(),
-			// $frequency_el = $( '[name=_campaign_recurring_donation_frequency_mode]' ),
-			// mode = $frequency_el.val() === 'variable' ? 'variable' : $mode_el.val(),
-			// $period_el = $( '[name=_campaign_recurring_donation_period]' ),
-			// period = $period_el.val();
 
 		// Get field.
 		var get_field = function( name ) {
-			var $el = $( '[name=' + name + '][type=select]' );
+			var $el = $( 'select[name=' + name + ']' );
 			return $el.length ? $el : $( '[name=' + name + '][type=radio]:checked' );
 		}
 
@@ -50,22 +39,22 @@
 
 		// Show a single row of plans.
 		var show_period_plans = function() {
+			var period = get_period();
+
 			$plans_el.show().find( 'tr' ).each( function() {
-				if ( get_period() === $( this ).data( 'period' ) ) {
-					$( this ).show();
-				} else {
-					$( this ).hide();
-				}
+				$( this ).toggle( $( this ).data( 'period' ) === period );
 			} );
 		}
 
 		// Update tables of plans.
 		var update_plan_tables = function() {
-			if ( 'disabled' === get_mode() ) {
+			var mode = get_mode();
+
+			if ( 'disabled' === mode ) {
 				return hide_all_plans();
 			}
 
-			if ( 'variable' === get_frequency_choice() ) {
+			if ( 'variable' === mode || 'variable' === get_frequency_choice() ) {
 				return show_all_plans();
 			}
 
