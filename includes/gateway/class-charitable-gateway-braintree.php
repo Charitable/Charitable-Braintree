@@ -265,7 +265,8 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 				return false;
 			}
 
-			$gateway = new Charitable_Gateway_Braintree();
+			$campaign_id = charitable_get_current_campaign_id();
+			$gateway     = new Charitable_Gateway_Braintree();
 
 			wp_localize_script(
 				'charitable-braintree-handler',
@@ -277,6 +278,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 					'applepay'              => (int) $gateway->get_value( 'enable_applepay' ),
 					'googlepay'             => (int) $gateway->get_value( 'enable_googlepay' ),
 					'googlepay_merchant_id' => $gateway->get_value( 'googlepay_merchant_id' ),
+					'description'           => $campaign_id ? sprintf( __( 'Donation to %s', 'charitable-braintree' ), get_the_title( $campaign_id ) ) : __( 'Donation', 'charitable-braintree' ),
 				]
 			);
 

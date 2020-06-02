@@ -124,14 +124,15 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 				$data = apply_filters(
 					'charitable_braintree_subscription_data',
 					[
-						'planId'             => $plan_id,
-						'paymentMethodToken' => $payment_method,
-						'price'              => array_sum( $details['amount'] ),
-						'descriptor'         => [
+						'planId'                => $plan_id,
+						'paymentMethodToken'    => $payment_method,
+						'price'                 => array_sum( $details['amount'] ),
+						'descriptor'            => [
 							'name' => $this->get_descriptor_name(),
 							'url'  => substr( $url_parts['host'], 0, 13 ),
 						],
-						'merchantAccountId'  => $this->get_merchant_account_id(),
+						'merchantAccountId'     => $this->get_merchant_account_id(),
+						'numberOfBillingCycles' => $this->get_subscription_cycles(),
 					],
 					$this
 				);
@@ -236,6 +237,18 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 			}
 
 			return $campaign_plans[ $period ];
+		}
+
+		/**
+		 * Get the number of times that the recurring donation
+		 * should be renewed for, or 0 for a never-ending subscription.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @return int
+		 */
+		public function get_subscription_cycles() {
+			return method_exists( $this->recurring, 'get_donation_length' ) ? (int) $this->recurring->get_donation_length() : 0;
 		}
 	}
 
