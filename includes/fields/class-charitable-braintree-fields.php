@@ -42,6 +42,10 @@ if ( ! class_exists( 'Charitable_Braintree_Fields' ) ) :
 		 * @return array
 		 */
 		public function add_campaign_fields( $fields ) {
+			if ( ! class_exists( 'Charitable_Recurring' ) ) {
+				return $fields;
+			}
+
 			$gateway          = new Charitable_Gateway_Braintree;
 			$braintree_fields = [
 				'braintree_recurring_live_plans' => [
