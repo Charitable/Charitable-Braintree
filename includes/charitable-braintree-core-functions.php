@@ -167,3 +167,31 @@ function charitable_braintree_get_new_merchant_account_link( $test_mode ) {
 		$extension
 	);
 }
+
+/**
+ * Return the link to the fraud tools page.
+ *
+ * @since  1.0.0
+ *
+ * @param  boolean $test_mode Whether to get the sandbox or live link.
+ * @return boolean
+ */
+function charitable_braintree_get_fraud_tools_link( $test_mode ) {
+	if ( $test_mode ) {
+		$base_url    = 'https://sandbox.braintreegateway.com';
+		$merchant_id = charitable_get_option( [ 'gateways_braintree', 'test_merchant_id' ] );
+	} else {
+		$base_url    = 'https://www.braintreegateway.com';
+		$merchant_id = charitable_get_option( [ 'gateways_braintree', 'live_merchant_id' ] );
+	}
+
+	if ( empty( $merchant_id ) ) {
+		return $base_url;
+	}
+
+	return sprintf(
+		'%1$s/merchants/%2$s/fraud',
+		$base_url,
+		$merchant_id
+	);
+}

@@ -51,28 +51,28 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 				 * Create a customer in the Vault.
 				 */
 				$customer_id = $this->create_customer();
-			}
 
-			if ( ! $customer_id ) {
-				$this->donation_log->add( __( 'Unable to set up customer in the Braintree Vault.', 'charitable-braintree' ) );
-				return false;
-			}
+				if ( ! $customer_id ) {
+					$this->donation_log->add( __( 'Unable to set up customer in the Braintree Vault.', 'charitable-braintree' ) );
+					return false;
+				}
 
-			/**
-			 * Create a payment method in the Vault, adding it to the customer.
-			 */
-			$payment_method = $this->create_payment_method( $customer_id );
+				/**
+				 * Create a payment method in the Vault, adding it to the customer.
+				 */
+				$payment_method = $this->create_payment_method( $customer_id );
 
-			if ( ! $payment_method ) {
-				$this->donation_log->add( __( 'Unable to add payment method.', 'charitable-braintree' ) );
-				return false;
+				if ( ! $payment_method ) {
+					$this->donation_log->add( __( 'Unable to add payment method.', 'charitable-braintree' ) );
+					return false;
+				}
 			}
 
 			/**
 			 * Prepare sale transaction data.
 			 */
 			$transaction_data = [
-				'amount'            => number_format( $this->donation->get_total_donation_amount( true ), 2 ),
+				'amount'            => $this->donation->get_total_donation_amount( true ),
 				'orderId'           => (string) $this->donation->get_donation_id(),
 				'customerId'        => $customer_id,
 				'options'           => [
@@ -87,6 +87,25 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 				'merchantAccountId' => $this->get_merchant_account_id(),
 			];
 
+			if ( isset( $payment_method ) && is_array( $payment_method ) ) {
+				$transaction_data['paymentMethodToken'] = $payment_method['token'];
+
+				if ( isset( $payment_method['authentication_id'] ) ) {
+					$transaction_data['threeDSecureAuthenticationId'] = $payment_method['authentication_id'];
+				}
+			} else {
+				$transaction_data['paymentMethodNonce'] = $this->get_gateway_value_from_processor( 'token' );
+				$transaction_data['options']            = [
+					'threeDSecure' => [ 'required' => true ],
+				];
+
+				$device_data = $this->get_gateway_value_from_processor( 'device_data' );
+
+				if ( $device_data ) {
+					$transaction_data['deviceData'] = $device_data;
+				}
+			}
+
 			foreach ( $this->donation->get_campaign_donations() as $campaign_donation ) {
 				$amount = Charitable_Currency::get_instance()->sanitize_monetary_amount( (string) $campaign_donation->amount, true );
 
@@ -100,6 +119,8 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 					'url'         => get_permalink( $campaign_donation->campaign_id ),
 				];
 			}
+
+			error_log( var_export( $transaction_data, true ) );
 
 			/**
 			 * Filter the transaction data.
@@ -116,22 +137,35 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 			 */
 			try {
 				$result = $this->braintree->transaction()->sale( $transaction_data );
+				error_log( var_export( $result, true ) );
 
 				if ( ! $result->success ) {
-					// error_log(__METHOD__);
-					error_log( var_export( $result->errors->deepAll(), true ) );
-					charitable_get_notices()->add_error( __( 'Donation not processed successfully in payment gateway.', 'charitable-braintree' ) );
-					$errors = '<ul>';
+					if ( count( $result->errors->deepAll() ) ) {
+						charitable_get_notices()->add_error( __( 'Donation not processed successfully in payment gateway.', 'charitable-braintree' ) );
 
-					foreach ( $result->errors->deepAll() as $error ) {
-						$errors .= sprintf( '<li>%1$s (%2$s)</li>', $error->message, $error->code );
+						$errors = '<ul>';
+
+						foreach ( $result->errors->deepAll() as $error ) {
+							$errors .= sprintf( '<li>%1$s (%2$s)</li>', $error->message, $error->code );
+						}
+
+						$errors .= '</ul>';
+
+						charitable_get_notices()->add_error( $errors );
+					} else {
+						charitable_get_notices()->add_error(
+							sprintf(
+								/* translators: %s: transaction status */
+								__( 'Your donation was unable to be processed and failed with the following error: %s', 'charitable-braintree' ),
+								$result->transaction->status
+							)
+						);
 					}
 
-					$errors .= '</ul>';
-
-					charitable_get_notices()->add_error( $errors );
-
-					return false;
+					return [
+						'success'                   => false,
+						'gateway_processing_status' => $result->transaction->status,
+					];
 				}
 
 				$transaction_url = sprintf(
@@ -150,7 +184,6 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 				);
 
 				$this->donation->set_gateway_transaction_id( $result->transaction->id );
-
 				$this->donation->update_status( 'charitable-completed' );
 
 				return true;
@@ -160,6 +193,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 					error_log( get_class( $e ) );
 					error_log( $e->getMessage() . ' [' . $e->getCode() . ']' );
 				}
+
 				return false;
 			}
 		}

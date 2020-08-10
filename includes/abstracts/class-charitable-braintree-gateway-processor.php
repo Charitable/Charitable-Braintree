@@ -209,9 +209,38 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 		 * @since  1.0.0
 		 *
 		 * @param  string $customer_id The customer id.
-		 * @return string|false Payment method id if successful.
+		 * @return array|false Payment method token & optionally a 3d secure authentication id, if successful.
 		 */
 		public function create_payment_method( $customer_id ) {
+			$data = [
+				'customerId'         => $customer_id,
+				'paymentMethodNonce' => $this->get_gateway_value_from_processor( 'token' ),
+				'billingAddress'     => [
+					'firstName'         => $this->donor->get_donor_meta( 'first_name' ),
+					'lastName'          => $this->donor->get_donor_meta( 'last_name' ),
+					'countryCodeAlpha2' => $this->donor->get_donor_meta( 'country' ),
+					'firstName'         => $this->donor->get_donor_meta( 'first_name' ),
+					'lastName'          => $this->donor->get_donor_meta( 'last_name' ),
+					'locality'          => $this->donor->get_donor_meta( 'city' ),
+					'postalCode'        => $this->donor->get_donor_meta( 'postcode' ),
+					'region'            => $this->donor->get_donor_meta( 'state' ),
+					'streetAddress'     => $this->donor->get_donor_meta( 'address' ),
+					'extendedAddress'   => $this->donor->get_donor_meta( 'address_2' ),
+				],
+			];
+
+			$device_data = $this->get_gateway_value_from_processor( 'device_data' );
+
+			if ( $device_data ) {
+				$data['deviceData'] = $device_data;
+				$data['options']    = [
+					'verifyCard'                    => true,
+					'verificationMerchantAccountId' => $this->get_merchant_account_id(),
+				];
+			}
+
+			error_log( var_export( $data, true ) );
+
 			/**
 			 * Filter payment method data.
 			 *
@@ -220,31 +249,22 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 			 * @param array                                  $data      Payment method data.
 			 * @param Charitable_Braintree_Gateway_Processor $processor This instance of `Charitable_Braintree_Gateway_Processor`.
 			 */
-			$data = apply_filters(
-				'charitable_braintree_payment_method_data',
-				[
-					'customerId'         => $customer_id,
-					'paymentMethodNonce' => $this->get_gateway_value_from_processor( 'token' ),
-					'billingAddress'     => [
-						'firstName'         => $this->donor->get_donor_meta( 'first_name' ),
-						'lastName'          => $this->donor->get_donor_meta( 'last_name' ),
-						'countryCodeAlpha2' => $this->donor->get_donor_meta( 'country' ),
-						'firstName'         => $this->donor->get_donor_meta( 'first_name' ),
-						'lastName'          => $this->donor->get_donor_meta( 'last_name' ),
-						'locality'          => $this->donor->get_donor_meta( 'city' ),
-						'postalCode'        => $this->donor->get_donor_meta( 'postcode' ),
-						'region'            => $this->donor->get_donor_meta( 'state' ),
-						'streetAddress'     => $this->donor->get_donor_meta( 'address' ),
-						'extendedAddress'   => $this->donor->get_donor_meta( 'address_2' ),
-					],
-				],
-				$this
-			);
+			$data = apply_filters( 'charitable_braintree_payment_method_data', $data, $this );
 
 			try {
 				$result = $this->braintree->paymentMethod()->create( $data );
-				return $result->success ? $result->paymentMethod->token : false; // phpcs:ignore
 
+				if ( $result->success ) {
+					$data = [ 'token' => $result->paymentMethod->token  ]; // phpcs:ignore
+
+					if ( isset( $result->paymentMethod->verification->threeDSecureInfo->threeDSecureAuthenticationId ) ) { // phpcs:ignore
+						$data['authentication_id'] = $result->paymentMethod->verification->threeDSecureInfo->threeDSecureAuthenticationId; // phpcs:ignore
+					}
+
+					return $data;
+				}
+
+				return false;
 			} catch ( Exception $e ) {
 				if ( defined( 'CHARITABLE_DEBUG' ) && CHARITABLE_DEBUG ) {
 					error_log( get_class( $e ) );
@@ -313,13 +333,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 		 * @return string
 		 */
 		public function get_merchant_account_id( $test_mode = null ) {
-			if ( is_null( $test_mode ) ) {
-				$test_mode = charitable_get_option( 'test_mode' );
-			}
-
-			$prefix = $test_mode ? 'test' : 'live';
-
-			return trim( $this->gateway->get_value( $prefix . '_merchant_account_id' ) );
+			return $this->gateway->get_merchant_account_id( $test_mode );
 		}
 
 		/**

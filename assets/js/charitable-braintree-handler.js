@@ -104,7 +104,6 @@
 							type: 'CARD',
 							parameters: {
 								billingAddressRequired: true,
-								billingAddress
 							}
 						}
 					]
@@ -120,6 +119,15 @@
 					displayName: CHARITABLE_BRAINTREE_VARS.description,
 					paymentRequest: applepay_payment_request( helper ),
 				};
+			}
+
+			if ( "1" === CHARITABLE_BRAINTREE_VARS.three_d_secure ) {
+				config.threeDSecure = true;
+			}
+
+			if ( "0" !== CHARITABLE_BRAINTREE_VARS.data_collector ) {
+				config.dataCollector = {};
+				config.dataCollector[CHARITABLE_BRAINTREE_VARS.data_collector] = true;
 			}
 
 			braintree.dropin.create( config, function ( createErr, instance ) {
@@ -144,10 +152,45 @@
 					// If we have found no errors, create a token with Stripe
 					if ( helper.errors.length === 0 ) {
 
+						var options = {};
+
 						// Pause processing
 						add_pending_process( helper );
 
-						instance.requestPaymentMethod( function ( err, payload ) {
+						if ( "1" === CHARITABLE_BRAINTREE_VARS.three_d_secure ) {
+							var billing = ( function() {
+								var billing = {},
+									billing_fields = [
+										{ field: 'first_name', key: 'givenName' },
+										{ field: 'last_name', key: 'surname' },
+										{ field: 'phone', key: 'phoneNumber' },
+										{ field: 'city', key: 'locality' },
+										{ field: 'country', key: 'countryCodeAlpha2' },
+										{ field: 'address', key: 'streetAddress' },
+										{ field: 'address_2', key: 'extendedAddress' },
+										{ field: 'postcode', key: 'postalCode' },
+										{ field: 'state', key: 'region' },
+									];
+
+								billing_fields.forEach( function( field ) {
+									var input = helper.get_input( field.field );
+
+									if ( input.length && input.val().length ) {
+										billing[field.key] = input.val();
+									}
+								} );
+
+								return billing;
+							} )();
+
+							options.threeDSecure = {
+								email: helper.get_email(),
+								amount: helper.unformat_amount( helper.get_amount() ),
+								billingAddress: billing
+							}
+						}
+
+						instance.requestPaymentMethod( options, function ( err, payload ) {
 							if ( err ) {
 								helper.add_error( err.message + ' [' + err.name + ']' );
 								remove_pending_process( helper );
@@ -155,6 +198,7 @@
 							}
 
 							helper.get_input( 'braintree_token' ).val( payload.nonce );
+							helper.get_input( 'braintree_device_data' ).val( payload.deviceData );
 
 							remove_pending_process( helper );
 						} );

@@ -117,7 +117,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 			/**
 			 * Also make sure that the Braintree token is picked up in the values array.
 			 */
-			add_filter( 'charitable_donation_form_submission_values', [ $this, 'set_submitted_braintree_token' ], 10, 2 );
+			add_filter( 'charitable_donation_form_submission_values', [ $this, 'add_hidden_braintree_fields_to_data' ], 10, 2 );
 
 			/**
 			 * Process the donation.
@@ -194,6 +194,21 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 							charitable_braintree_get_new_merchant_account_link( false )
 						),
 					],
+					'live_fraud_protection' => [
+						'title'    => __( 'Enable Advanced Fraud Tools', 'charitable-braintree' ),
+						'type'     => 'radio',
+						'priority' => 9,
+						'default'  => 'disabled',
+						'options'  => [
+							'disabled' => __( 'Disable', 'charitable-braintree' ),
+							'enabled'  => __( 'Enable', 'charitable-braintree' ),
+						],
+						'help'     => sprintf(
+							/* translators: %s: link to create new merchant account */
+							__( 'To use Advanced Fraud Tools, you must first <a href="%s" target="_blank">enable it in your Braintree account</a>.', 'charitable-braintree' ),
+							charitable_braintree_get_fraud_tools_link( false )
+						)
+					],
 					'section_test_mode'        => [
 						'title'    => __( 'Test Mode Settings', 'charitable-braintree' ),
 						'type'     => 'heading',
@@ -228,6 +243,21 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 							__( 'Create a new <a href="%s" target="_blank">merchant account in Braintree</a>.', 'charitable-braintree' ),
 							charitable_braintree_get_new_merchant_account_link( true )
 						),
+					],
+					'test_fraud_protection' => [
+						'title'    => __( 'Enable Advanced Fraud Tools', 'charitable-braintree' ),
+						'type'     => 'radio',
+						'priority' => 16,
+						'default'  => 'disabled',
+						'options'  => [
+							'disabled' => __( 'Disable', 'charitable-braintree' ),
+							'enabled'  => __( 'Enable', 'charitable-braintree' ),
+						],
+						'help'     => sprintf(
+							/* translators: %s: link to create new merchant account */
+							__( 'To use Advanced Fraud Tools, you must first <a href="%s" target="_blank">enable it in your Braintree account</a>.', 'charitable-braintree' ),
+							charitable_braintree_get_fraud_tools_link( true )
+						)
 					],
 					'section_payment_methods' => [
 						'title'    => __( 'Payment Methods', 'charitable-braintree' ),
@@ -270,6 +300,11 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 							'data-trigger-key'   => '#charitable_settings_gateways_braintree_enable_googlepay',
 							'data-trigger-value' => 'checked',
 						],
+					],
+					'enable_3d_secure'       => [
+						'type'     => 'checkbox',
+						'title'    => __( 'Enable 3D Secure', 'charitable-braintree' ),
+						'priority' => 25,
 					],
 				]
 			);
@@ -330,21 +365,35 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		}
 
 		/**
-		 * Return whether the data collector is enabled.
+		 * Return whether to use Advanced Fraud Protection.
+		 *
+		 * If Advanced Fraud Protection is disabled, this will return false.
+		 * If Advanced Fraud Protection is enabled, this will return 'paypal' by
+		 * default, but can be filtered to return 'kount' instead.
 		 *
 		 * @since  1.0.0
 		 *
-		 * @return boolean
+		 * @return string|int
 		 */
-		public function data_collector_enabled() {
+		public function get_fraud_protection() {
+			$key = charitable_get_option( 'test_mode' ) ? 'test_fraud_protection' : 'live_fraud_protection';
+
+			if ( 'disabled' === $this->get_value( $key ) ) {
+				return 0;
+			}
+
 			/**
-			 * Filter whether to collect device data.
+			 * Return the advanced fraud protection tool to use.
+			 *
+			 * @see https://braintree.github.io/braintree-web-drop-in/docs/current/module-braintree-web-drop-in.html#~dataCollectorOptions
 			 *
 			 * @since 1.0.0
 			 *
-			 * @param boolean $enabled Whether to collect device data.
+			 * @param string $tool Return the fraud protection tool. This should be one
+			 *                     of the options specified for the dataCollectorOptions
+			 *                     property in the drop-in UI. See link above.
 			 */
-			return apply_filters( 'charitable_braintree_enable_data_collector', true );
+			return apply_filters( 'charitable_braintree_advanced_fraud_protection', 'paypal' );
 		}
 
 		/**
@@ -354,7 +403,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 *
 		 * @return boolean
 		 */
-		public static function enqueue_scripts() {
+		public function enqueue_scripts() {
 			if ( ! Charitable_Gateways::get_instance()->is_active_gateway( self::get_gateway_id() ) ) {
 				return false;
 			}
@@ -371,7 +420,9 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 					'applepay'              => (int) $this->get_value( 'enable_applepay' ),
 					'googlepay'             => (int) $this->get_value( 'enable_googlepay' ),
 					'googlepay_merchant_id' => $this->get_value( 'googlepay_merchant_id' ),
+					'three_d_secure'        => (int) $this->get_value( 'enable_3d_secure' ),
 					'description'           => $campaign_id ? sprintf( __( 'Donation to %s', 'charitable-braintree' ), get_the_title( $campaign_id ) ) : __( 'Donation', 'charitable-braintree' ),
+					'data_collector'        => $this->get_fraud_protection(),
 				]
 			);
 
@@ -433,21 +484,28 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 				return $gateway_fields;
 			}
 
-			return array_merge(
-				$gateway_fields,
-				[
-					'drop_in_container' => [
-						'type'     => 'content',
-						'content'  => '<div id="charitable-braintree-dropin-container"></div>',
-						'priority' => 1,
-					],
-					'braintree_token'   => [
-						'type'     => 'hidden',
-						'value'    => '',
-						'priority' => 2,
-					],
-				]
-			);
+			$fields = [
+				'drop_in_container' => [
+					'type'     => 'content',
+					'content'  => '<div id="charitable-braintree-dropin-container"></div>',
+					'priority' => 1,
+				],
+				'braintree_token'   => [
+					'type'     => 'hidden',
+					'value'    => '',
+					'priority' => 2,
+				],
+			];
+
+			if ( 0 !== $this->get_fraud_protection() ) {
+				$fields['braintree_device_data'] = [
+					'type'     => 'hidden',
+					'value'    => '',
+					'priority' => 3,
+				];
+			}
+
+			return array_merge( $gateway_fields, $fields );
 		}
 
 		/**
@@ -469,9 +527,10 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 
 			$prefix = $test_mode ? 'test' : 'live';
 			return [
-				'merchant_id' => trim( $this->get_value( $prefix . '_merchant_id' ) ),
-				'public_key'  => trim( $this->get_value( $prefix . '_public_key' ) ),
-				'private_key' => trim( $this->get_value( $prefix . '_private_key' ) ),
+				'merchant_id'      => trim( $this->get_value( $prefix . '_merchant_id' ) ),
+				'public_key'       => trim( $this->get_value( $prefix . '_public_key' ) ),
+				'private_key'      => trim( $this->get_value( $prefix . '_private_key' ) ),
+				'merchant_account' => trim( $this->get_value( $prefix . '_merchant_account_id' ) ),
 			];
 		}
 
@@ -615,8 +674,15 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 				return false;
 			}
 
+			$args = [
+				'merchantAccountId' => $this->get_merchant_account_id( $test_mode ),
+			];
+
 			$customer_id = $this->get_braintree_customer_id( $test_mode );
-			$args        = $customer_id ? [ 'customerId' => $customer_id ] : [];
+
+			if ( $customer_id ) {
+				$args['customerId'] = $customer_id;
+			}
 
 			return $braintree->clientToken()->generate( $args );
 		}
@@ -660,6 +726,26 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 			}
 		}
 
+
+		/**
+		 * Return the merchant account id to use for a transaction.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  boolean|null $test_mode Whether to get test mode keys. If null, this
+		 *                                 will use the current site Test Mode setting.
+		 * @return string
+		 */
+		public function get_merchant_account_id( $test_mode = null ) {
+			if ( is_null( $test_mode ) ) {
+				$test_mode = charitable_get_option( 'test_mode' );
+			}
+
+			$prefix = $test_mode ? 'test' : 'live';
+
+			return trim( $this->get_value( $prefix . '_merchant_account_id' ) );
+		}
+
 		/**
 		 * Validate the submitted credit card details.
 		 *
@@ -696,10 +782,14 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 * @param  array $submitted The raw POST data.
 		 * @return array
 		 */
-		public function set_submitted_braintree_token( $fields, $submitted ) {
+		public function add_hidden_braintree_fields_to_data( $fields, $submitted ) {
 			$token = isset( $submitted['braintree_token'] ) ? $submitted['braintree_token'] : false;
 
 			$fields['gateways']['braintree']['token'] = $token;
+
+			if ( isset( $submitted['braintree_device_data'] ) ) {
+				$fields['gateways']['braintree']['device_data'] = $submitted['braintree_device_data'];
+			}
 
 			return $fields;
 		}

@@ -124,7 +124,8 @@ if ( ! class_exists( 'Charitable_Braintree' ) ) :
 			/**
 			 * Init classes that need to be started.
 			 */
-			new Charitable_Braintree_Fields();
+			$this->fields  = new Charitable_Braintree_Fields();
+			$this->gateway = new Charitable_Gateway_Braintree();
 
 			/**
 			 * Do something when the plugin is first started.
@@ -184,30 +185,8 @@ if ( ! class_exists( 'Charitable_Braintree' ) ) :
 			/* Vendor autoload */
 			require_once( $this->get_path( 'directory' ) . 'vendor/autoload.php' );
 
-			/* Interfaces */
-			require_once( $includes_dir . 'interfaces/interface-charitable-braintree-gateway-processor.php' );
-
-			/* Abstracts */
-			require_once( $includes_dir . 'abstracts/class-charitable-braintree-gateway-processor.php' );
-
 			/* Core */
 			require_once( $includes_dir . 'charitable-braintree-core-functions.php' );
-
-			/* Deprecated */
-			require_once( $includes_dir . 'deprecated/class-charitable-braintree-deprecated.php' );
-
-			/* Fields */
-			require_once( $includes_dir . 'fields/class-charitable-braintree-fields.php' );
-
-			/* Gateways */
-			require_once( $includes_dir . 'gateway/class-charitable-braintree-gateway-processor-one-time.php' );
-			require_once( $includes_dir . 'gateway/class-charitable-braintree-gateway-processor-recurring.php' );
-			require_once( $includes_dir . 'gateway/class-charitable-braintree-plans.php' );
-			require_once( $includes_dir . 'gateway/class-charitable-braintree-webhook-processor.php' );
-			require_once( $includes_dir . 'gateway/class-charitable-gateway-braintree.php' );
-
-			/* Upgrades */
-			require_once( $includes_dir . 'upgrades/class-charitable-braintree-upgrade.php' );
 		}
 
 		/**
@@ -321,24 +300,42 @@ if ( ! class_exists( 'Charitable_Braintree' ) ) :
 			/* Register Braintree dropin scripts. */
 			wp_register_script(
 				'charitable-braintree-dropin',
-				'https://js.braintreegateway.com/web/dropin/1.16.0/js/dropin.min.js',
+				'https://js.braintreegateway.com/web/dropin/1.23.0/js/dropin.min.js',
 				[],
-				'1.16.0',
+				'1.23.0',
 				true
 			);
 
-			if ( $this->data_collector_enabled() ) {
+			$dependencies = [
+				'charitable-braintree-dropin',
+				'jquery-core',
+			];
 
-			}
+			// if ( 0 !== $this->gateway->get_fraud_protection() ) {
+			// 	wp_register_script(
+			// 		'charitable-braintree-web-client',
+			// 		'https://js.braintreegateway.com/web/3.64.1/js/client.min.js',
+			// 		[],
+			// 		'3.64.1',
+			// 		true
+			// 	);
+
+			// 	wp_register_script(
+			// 		'charitable-braintree-web-data-collector',
+			// 		'https://js.braintreegateway.com/web/3.64.1/js/data-collector.min.js',
+			// 		[ 'charitable-braintree-web-client' ],
+			// 		'3.64.1',
+			// 		true
+			// 	);
+
+			// 	$dependencies[] = 'charitable-braintree-web-data-collector';
+			// }
 
 			/* Register our Braintree handler. */
 			wp_register_script(
 				'charitable-braintree-handler',
 				$this->get_path( 'directory', false ) . 'assets/js/charitable-braintree-handler' . $suffix . '.js',
-				[
-					'charitable-braintree-dropin',
-					'jquery-core',
-				],
+				$dependencies,
 				$version,
 				true
 			);
