@@ -156,9 +156,57 @@ module.exports = function(grunt) {
 
     });
 
+    // Classmap
+    grunt.registerTask( 'classmap', 'Generate class to file array" task.', function() {
+        var map = "<?php\n";
+            map += "/* CLASSMAP: IGNORE */\n";
+            map += "return [\n";
+
+        //loop through all files in includes directory
+        grunt.file.recurse("includes", function (abspath, rootdir, subdir, filename) {
+            var classname = filename.replace('.php', '');
+            var filepath = typeof subdir === 'undefined' ? filename : subdir + '/' + filename;
+
+            if( filename.includes('interface') ) {
+                classname = classname.replace('interface-', '') + '_Interface';
+            } else if ( filename.includes('abstract') ) {
+                classname = classname.replace('abstract-class-', '');
+            } else if ( filename.includes('deprecated-class-' ) ) {
+                classname = classname.replace('deprecated-class-', '');
+            } else if ( filename.includes('class') ) {
+                classname = classname.replace('class-', '');
+            } else {
+                classname = '';
+            }
+
+            // Ignore function files.
+            if( classname != '' ) {
+                if ( grunt.file.read(abspath).includes('/* CLASSMAP: IGNORE */') ) {
+                    return;
+                }
+
+                // Replace the hyphens - with underderscores and capitalize.
+                classname = classname.replace(/-/g, '_' ).replace(/^\w|\_[a-z]/g, function(letter) {
+                    return letter.toUpperCase();
+                });
+
+                // A few gotchas.
+                classname = classname.replace( '_Api', '_API' );
+                classname = classname.replace( '_Db', '_DB' );
+                classname = classname.replace( '_I18n', '_i18n' );
+
+                map = map.concat( "\t'" + classname + "' => '" + filepath + "',\n" );
+            }
+        });
+
+        map = map.concat( "];\n" );
+
+        grunt.file.write('includes/autoloader/charitable-braintree-class-map.php', map );
+    } );
+
     // Default task. - grunt watch
     grunt.registerTask( 'default', 'watch' );
 
     // Build task(s).
-	grunt.registerTask( 'build', [ 'sass', 'makepot', 'uglify', 'cssmin', 'clean', 'copy', 'compress' ] );
+	grunt.registerTask( 'build', [ 'sass', 'makepot', 'classmap', 'uglify', 'cssmin', 'clean', 'copy', 'compress' ] );
 };

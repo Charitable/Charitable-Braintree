@@ -98,7 +98,16 @@
 			if ( "1" === CHARITABLE_BRAINTREE_VARS.googlepay ) {
 				config.googlePay = {
 					googlePayVersion: 2,
-					transactionInfo: googlepay_transaction_info( helper )
+					transactionInfo: googlepay_transaction_info( helper ),
+					allowedPaymentMethods: [
+						{
+							type: 'CARD',
+							parameters: {
+								billingAddressRequired: true,
+								billingAddress
+							}
+						}
+					]
 				};
 
 				if ( "1" !== CHARITABLE_VARS.test_mode ) {

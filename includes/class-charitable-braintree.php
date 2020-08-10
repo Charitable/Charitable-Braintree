@@ -173,7 +173,6 @@ if ( ! class_exists( 'Charitable_Braintree' ) ) :
 			require_once( $includes_dir . 'gateway/class-charitable-braintree-plans.php' );
 			require_once( $includes_dir . 'gateway/class-charitable-braintree-webhook-processor.php' );
 			require_once( $includes_dir . 'gateway/class-charitable-gateway-braintree.php' );
-			require_once( $includes_dir . 'gateway/charitable-braintree-gateway-hooks.php' );
 
 			/* Upgrades */
 			require_once( $includes_dir . 'upgrades/class-charitable-braintree-upgrade.php' );
@@ -253,6 +252,11 @@ if ( ! class_exists( 'Charitable_Braintree' ) ) :
 			add_action( 'wp_enqueue_scripts', array( $this, 'setup_scripts' ), 11 );
 
 			/**
+			 * Set up webhook handling.
+			 */
+			add_action( 'charitable_process_ipn_braintree', [ 'Charitable_Braintree_Webhook_Processor', 'process' ] );
+
+			/**
 			 * Set up upgrade process.
 			 */
 			// add_action( 'admin_notices', array( Charitable_Braintree_Upgrade::get_instance(), 'add_upgrade_notice' ) );
@@ -290,6 +294,10 @@ if ( ! class_exists( 'Charitable_Braintree' ) ) :
 				'1.16.0',
 				true
 			);
+
+			if ( $this->data_collector_enabled() ) {
+
+			}
 
 			/* Register our Braintree handler. */
 			wp_register_script(

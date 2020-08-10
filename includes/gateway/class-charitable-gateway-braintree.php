@@ -27,6 +27,16 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		const ID = 'braintree';
 
 		/**
+		 * Boolean flag recording whether the gateway hooks
+		 * have been set up.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @var   boolean
+		 */
+		private static $setup = false;
+
+		/**
 		 * Live mode gateway instance.
 		 *
 		 * @since 1.0.0
@@ -52,20 +62,78 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		public function __construct() {
 			$this->name = apply_filters( 'charitable_gateway_braintree_name', __( 'Braintree', 'charitable-braintree' ) );
 
-			$this->defaults = array(
+			$this->defaults = [
 				'label' => __( 'Braintree', 'charitable-braintree' ),
-			);
+			];
 
-			$this->supports = array(
+			$this->supports = [
 				'1.3.0',
 				'recurring',
 				'refunds',
-			);
+			];
+
+			$this->setup();
+		}
+
+		/**
+		 * Set up hooks for the class.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @return void
+		 */
+		public function setup() {
+			if ( self::$setup ) {
+				return;
+			}
+
+			self::$setup = true;
 
 			/**
-			 * Needed for backwards compatibility with Charitable < 1.3
+			 * Register our new gateway.
 			 */
-			$this->credit_card_form = false;
+			add_filter( 'charitable_payment_gateways', [ $this, 'register_gateway' ] );
+
+			/**
+			 * Set up Braintree in the donation form.
+			 */
+			add_action( 'charitable_form_after_fields', [ $this, 'maybe_setup_scripts_in_donation_form' ] );
+
+			/**
+			 * Maybe enqueue the Braintree scripts after a campaign loop, if modal donations are in use.
+			 */
+			add_action( 'charitable_campaign_loop_after', [ $this, 'maybe_setup_scripts_in_campaign_loop' ] );
+
+			/**
+			 * Set up Braintree payment fields.
+			 */
+			add_action( 'charitable_donation_form_gateway_fields', [ $this, 'setup_braintree_payment_fields' ], 10, 2 );
+
+			/**
+			 * Validate the donation form submission before processing.
+			 */
+			add_filter( 'charitable_validate_donation_form_submission_gateway', [ $this, 'validate_donation' ], 10, 3 );
+
+			/**
+			 * Also make sure that the Braintree token is picked up in the values array.
+			 */
+			add_filter( 'charitable_donation_form_submission_values', [ $this, 'set_submitted_braintree_token' ], 10, 2 );
+
+			/**
+			 * Process the donation.
+			 */
+			add_filter( 'charitable_process_donation_braintree', [ $this, 'process_donation' ], 10, 3 );
+
+			/**
+			 * Refund a donation from the dashboard.
+			 */
+			add_action( 'charitable_process_refund_braintree', [ $this, 'refund_donation_from_dashboard' ] );
+
+			/**
+			 * Subscription cancellations.
+			 */
+			add_filter( 'charitable_recurring_can_cancel_braintree', [ $this, 'is_subscription_cancellable' ], 10, 2 );
+			add_action( 'charitable_process_cancellation_braintree', [ $this, 'cancel_subscription' ], 10, 2 );
 		}
 
 		/**
@@ -166,6 +234,14 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 						'type'     => 'heading',
 						'priority' => 20,
 					],
+					'payment_methods_note'    => [
+						'type'     => 'content',
+						'priority' => 21,
+						'content'  => '<div class="charitable-settings-notice" style="margin-top:0;">
+										<p>' . __( 'Additional payment methods <strong>must be activated in your Braintree account</strong> as well as enabling them below.', 'charitable-braintree' ) . '</p>
+										<p>' . __( 'To enable payment methods in Braintree, click on the gear icon in the top right, then click on Processing. If a payment method is not listed, it is not available for your account.', 'charitable-braintree' ) . '</p>
+										</div>'
+					],
 					'enable_paypal'           => [
 						'type'     => 'checkbox',
 						'title'    => __( 'Enable payment with PayPal', 'charitable-braintree' ),
@@ -247,10 +323,28 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 * @param  string[] $gateways The list of registered gateways.
 		 * @return string[]
 		 */
-		public static function register_gateway( $gateways ) {
+		public function register_gateway( $gateways ) {
 			$gateways['braintree'] = 'Charitable_Gateway_Braintree';
 
 			return $gateways;
+		}
+
+		/**
+		 * Return whether the data collector is enabled.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @return boolean
+		 */
+		public function data_collector_enabled() {
+			/**
+			 * Filter whether to collect device data.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param boolean $enabled Whether to collect device data.
+			 */
+			return apply_filters( 'charitable_braintree_enable_data_collector', true );
 		}
 
 		/**
@@ -266,18 +360,17 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 			}
 
 			$campaign_id = charitable_get_current_campaign_id();
-			$gateway     = new Charitable_Gateway_Braintree();
 
 			wp_localize_script(
 				'charitable-braintree-handler',
 				'CHARITABLE_BRAINTREE_VARS',
 				[
-					'client_token'          => $gateway->get_client_token(),
-					'paypal'                => (int) $gateway->get_value( 'enable_paypal' ),
-					'venmo'                 => (int) $gateway->get_value( 'enable_venmo' ),
-					'applepay'              => (int) $gateway->get_value( 'enable_applepay' ),
-					'googlepay'             => (int) $gateway->get_value( 'enable_googlepay' ),
-					'googlepay_merchant_id' => $gateway->get_value( 'googlepay_merchant_id' ),
+					'client_token'          => $this->get_client_token(),
+					'paypal'                => (int) $this->get_value( 'enable_paypal' ),
+					'venmo'                 => (int) $this->get_value( 'enable_venmo' ),
+					'applepay'              => (int) $this->get_value( 'enable_applepay' ),
+					'googlepay'             => (int) $this->get_value( 'enable_googlepay' ),
+					'googlepay_merchant_id' => $this->get_value( 'googlepay_merchant_id' ),
 					'description'           => $campaign_id ? sprintf( __( 'Donation to %s', 'charitable-braintree' ), get_the_title( $campaign_id ) ) : __( 'Donation', 'charitable-braintree' ),
 				]
 			);
@@ -297,7 +390,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 * @param  Charitable_Donation_Form $form The current form object.
 		 * @return boolean
 		 */
-		public static function maybe_setup_scripts_in_donation_form( $form ) {
+		public function maybe_setup_scripts_in_donation_form( $form ) {
 			if ( ! is_a( $form, 'Charitable_Donation_Form' ) ) {
 				return false;
 			}
@@ -306,7 +399,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 				return false;
 			}
 
-			return self::enqueue_scripts();
+			return $this->enqueue_scripts();
 		}
 
 		/**
@@ -318,12 +411,12 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 *
 		 * @return boolean
 		 */
-		public static function maybe_setup_scripts_in_campaign_loop() {
+		public function maybe_setup_scripts_in_campaign_loop() {
 			if ( 'modal' !== charitable_get_option( 'donation_form_display', 'separate_page' ) ) {
 				return false;
 			}
 
-			return self::enqueue_scripts();
+			return $this->enqueue_scripts();
 		}
 
 		/**
@@ -335,7 +428,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 * @param  Charitable_Gateway $gateway        Gateway object.
 		 * @return array
 		 */
-		public static function setup_braintree_payment_fields( $gateway_fields, $gateway ) {
+		public function setup_braintree_payment_fields( $gateway_fields, $gateway ) {
 			if ( self::get_gateway_id() !== $gateway->get_gateway_id() ) {
 				return $gateway_fields;
 			}
@@ -577,7 +670,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 * @param  mixed[] $values  Submitted donation values.
 		 * @return boolean
 		 */
-		public static function validate_donation( $valid, $gateway, $values ) {
+		public function validate_donation( $valid, $gateway, $values ) {
 			if ( 'braintree' != $gateway ) {
 				return $valid;
 			}
@@ -603,7 +696,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 * @param  array $submitted The raw POST data.
 		 * @return array
 		 */
-		public static function set_submitted_braintree_token( $fields, $submitted ) {
+		public function set_submitted_braintree_token( $fields, $submitted ) {
 			$token = isset( $submitted['braintree_token'] ) ? $submitted['braintree_token'] : false;
 
 			$fields['gateways']['braintree']['token'] = $token;
@@ -619,7 +712,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 * @param  Charitable_Donation_Processor $processor The Donation Processor helper.
 		 * @return boolean
 		 */
-		public static function is_recurring_donation( Charitable_Donation_Processor $processor ) {
+		public function is_recurring_donation( Charitable_Donation_Processor $processor ) {
 			return $processor->get_donation_data_value( 'donation_plan', false );
 		}
 
@@ -633,8 +726,8 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 * @param  Charitable_Donation_Processor $processor   Donation processor object.
 		 * @return boolean|array
 		 */
-		public static function process_donation( $return, $donation_id, $processor ) {
-			if ( self::is_recurring_donation( $processor ) ) {
+		public function process_donation( $return, $donation_id, $processor ) {
+			if ( $this->is_recurring_donation( $processor ) ) {
 				/**
 				 * Filter the processor used for handling recurring donations.
 				 *
@@ -692,7 +785,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 * @param  int $donation_id The donation ID.
 		 * @return boolean
 		 */
-		public static function refund_donation_from_dashboard( $donation_id ) {
+		public function refund_donation_from_dashboard( $donation_id ) {
 			$donation = charitable_get_donation( $donation_id );
 
 			if ( ! $donation ) {
@@ -753,7 +846,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 * @param  Charitable_Recurring_Donation $donation The donation object.
 		 * @return boolean
 		 */
-		public static function is_subscription_cancellable( $can_cancel, Charitable_Recurring_Donation $donation ) {
+		public function is_subscription_cancellable( $can_cancel, Charitable_Recurring_Donation $donation ) {
 			if ( ! $can_cancel ) {
 				return $can_cancel;
 			}
@@ -779,7 +872,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 * @param  Charitable_Recurring_Donation $donation  The recurring donation object.
 		 * @return boolean
 		 */
-		public static function cancel_subscription( $cancelled, Charitable_Recurring_Donation $donation ) {
+		public function cancel_subscription( $cancelled, Charitable_Recurring_Donation $donation ) {
 			$subscription_id = $donation->get_gateway_subscription_id();
 
 			if ( ! $subscription_id ) {
