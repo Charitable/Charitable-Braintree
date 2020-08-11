@@ -12,6 +12,7 @@ namespace Braintree;
  * @property-read string $currencyIsoCode
  * @property-read string $disbursementDate
  * @property-read \Braintree\Dispute\EvidenceDetails $evidence
+ * @property-read string $graphQLId
  * @property-read string $id
  * @property-read string $kind
  * @property-read string $merchantAccountId
@@ -40,9 +41,6 @@ class Dispute extends Base
     const OPEN  = 'open';
     const WON  = 'won';
     const LOST = 'lost';
-
-    /* deprecated; for backwards compatibilty */
-    const Open  = 'open';
 
     /* Dispute Reason */
     const CANCELLED_RECURRING_TRANSACTION = "cancelled_recurring_transaction";
@@ -188,4 +186,3 @@ class Dispute extends Base
         return Configuration::gateway()->dispute()->search($query);
     }
 }
-class_alias('Braintree\Dispute', 'Braintree_Dispute');

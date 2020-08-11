@@ -204,6 +204,59 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 		}
 
 		/**
+		 * Return the payment data to use for a particular transaction or subscription.
+		 *
+		 * When a payment method already exists in the vault, the transaction is made using
+		 * the nonce. When it does not yet exist in the vault, we first create the payment
+		 * method, which returns an array containing the token and possibly an authenctication
+		 * id, if 3D Secure is being used.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  string  $customer_id            The customer id.
+		 * @param  boolean $vaulted_payment_method Whether the payment method has already been vaulted.
+		 * @return array
+		 */
+		public function get_payment_data( $customer_id, $vaulted_payment_method ) {
+			if ( ! $vaulted_payment_method ) {
+				/* Create a payment method in the Vault, adding it to the customer. */
+				$payment_method = $this->create_payment_method( $customer_id );
+
+				if ( ! $payment_method ) {
+					$this->donation_log->add( __( 'Unable to add payment method.', 'charitable-braintree' ) );
+					return false;
+				}
+
+				$payment_data['paymentMethodToken'] = $payment_method['token'];
+
+				if ( array_key_exists( 'authentication_id', $payment_method ) ) {
+					$payment_data['threeDSecureAuthenticationId'] = $payment_method['authentication_id'];
+				}
+
+				return $payment_data;
+			}
+
+			$payment_data = [
+				'paymentMethodNonce' => $this->get_gateway_value_from_processor( 'nonce' ),
+			];
+
+			/* Maybe include 3D Secure. */
+			if ( $this->gateway->get_value( 'enable_3d_secure' ) ) {
+				$payment_data['options'] = [
+					'threeDSecure' => [ 'required' => true ],
+				];
+			}
+
+			$device_data = $this->get_gateway_value_from_processor( 'device_data' );
+
+			if ( $device_data ) {
+				$payment_data['deviceData'] = $device_data;
+			}
+
+			return $payment_data;
+		}
+
+		/**
 		 * Create a new payment method in Braintree.
 		 *
 		 * @since  1.0.0
@@ -214,7 +267,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 		public function create_payment_method( $customer_id ) {
 			$data = [
 				'customerId'         => $customer_id,
-				'paymentMethodNonce' => $this->get_gateway_value_from_processor( 'token' ),
+				'paymentMethodNonce' => $this->get_gateway_value_from_processor( 'nonce' ),
 				'billingAddress'     => [
 					'firstName'         => $this->donor->get_donor_meta( 'first_name' ),
 					'lastName'          => $this->donor->get_donor_meta( 'last_name' ),
@@ -239,8 +292,6 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 				];
 			}
 
-			error_log( var_export( $data, true ) );
-
 			/**
 			 * Filter payment method data.
 			 *
@@ -251,8 +302,12 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 			 */
 			$data = apply_filters( 'charitable_braintree_payment_method_data', $data, $this );
 
+			error_log( var_export( __METHOD__, true ) );
+			error_log( var_export( $data, true ) );
 			try {
 				$result = $this->braintree->paymentMethod()->create( $data );
+
+				error_log( var_export( $result, true ) );
 
 				if ( $result->success ) {
 					$data = [ 'token' => $result->paymentMethod->token  ]; // phpcs:ignore
@@ -273,6 +328,22 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 
 				return false;
 			}
+		}
+
+		/**
+		 * Get the descriptor array for a transaction.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @return array
+		 */
+		public function get_descriptor() {
+			$url_parts = parse_url( home_url() );
+
+			return [
+				'name' => $this->get_descriptor_name(),
+				'url'  => substr( $url_parts['host'], 0, 13 ),
+			];
 		}
 
 		/**

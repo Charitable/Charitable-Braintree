@@ -97,11 +97,11 @@ if ( ! class_exists( 'Charitable_Braintree_Webhook_Processor' ) ) :
 				$default_processors = apply_filters(
 					'charitable_braintree_default_webhook_event_processors',
 					[
-						Braintree_WebhookNotification::SUBSCRIPTION_CANCELED             => [ $this, 'process_subscription_cancelled' ],
-						Braintree_WebhookNotification::SUBSCRIPTION_CHARGED_SUCCESSFULLY => [ $this, 'process_subscription_charged_successfully' ],
-						Braintree_WebhookNotification::SUBSCRIPTION_EXPIRED              => [ $this, 'process_subscription_expired' ],
-						Braintree_WebhookNotification::SUBSCRIPTION_WENT_ACTIVE          => [ $this, 'process_subscription_went_active' ],
-						Braintree_WebhookNotification::SUBSCRIPTION_WENT_PAST_DUE        => [ $this, 'process_subscription_went_past_due' ],
+						Braintree\WebhookNotification::SUBSCRIPTION_CANCELED             => [ $this, 'process_subscription_cancelled' ],
+						Braintree\WebhookNotification::SUBSCRIPTION_CHARGED_SUCCESSFULLY => [ $this, 'process_subscription_charged_successfully' ],
+						Braintree\WebhookNotification::SUBSCRIPTION_EXPIRED              => [ $this, 'process_subscription_expired' ],
+						Braintree\WebhookNotification::SUBSCRIPTION_WENT_ACTIVE          => [ $this, 'process_subscription_went_active' ],
+						Braintree\WebhookNotification::SUBSCRIPTION_WENT_PAST_DUE        => [ $this, 'process_subscription_went_past_due' ],
 					]
 				);
 

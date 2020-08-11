@@ -1,55 +1,11 @@
 ( function( $ ) {
 
 	var $body = $( 'body' );
-	var process_id;
-
-	/**
-	 * Add a pending process to the helper.
-	 *
-	 * This provides backwards compatibility for versions of Charitable
-	 * that just used the pause_processing flag and did not support the
-	 * more flexible add_pending_process/remove_pending_process methods.
-	 */
-	var add_pending_process = function( helper ) {
-		if ( helper.__proto__.hasOwnProperty( 'add_pending_process' ) ) {
-			process_id = helper.add_pending_process( 'braintree' );
-		} else {
-			helper.pause_processing = true;
-		}
-	}
-
-	/**
-	 * Remove a pending process to the helper.
-	 */
-	var remove_pending_process = function( helper ) {
-		if ( helper.__proto__.hasOwnProperty( 'remove_pending_process_by_name' ) ) {
-			return helper.remove_pending_process_by_name( 'braintree' );
-		}
-
-		if ( helper.__proto__.hasOwnProperty( 'remove_pending_process' ) ) {
-			var index = this.pending_processes.indexOf( 'braintree' );
-			return -1 !== index && this.remove_pending_process( index );
-		}
-
-		helper.pause_processing = false;
-	}
 
 	/**
 	 * Handle Braintree donations.
 	 */
 	var braintree_handler = function( helper ) {
-
-		/**
-		 * Process the Braintree response.
-		 */
-		var process_response = function( response, helper ) {
-			if ( response.error ) {
-				helper.add_error( response.error.message );
-			} else {
-				helper.get_input( 'Braintree_token' ).val( response.id );
-				remove_pending_process( helper );
-			}
-		}
 
 		/**
 		 * Get the Google Pay config.
@@ -77,9 +33,11 @@
 		}
 
 		/**
-		 * Set up drop-in as soon as the form is initialized.
+		 * Get config for the drop-in module.
+		 *
+		 * @return object
 		 */
-		var init = function( helper ) {
+		var dropin_config = function( helper ) {
 			var config = {
 				authorization: CHARITABLE_BRAINTREE_VARS.client_token,
 				container: '#charitable-braintree-dropin-container'
@@ -130,8 +88,58 @@
 				config.dataCollector[CHARITABLE_BRAINTREE_VARS.data_collector] = true;
 			}
 
-			braintree.dropin.create( config, function ( createErr, instance ) {
+			return config;
+		}
 
+		/**
+		 * Get the requestPaymentMethod options.
+		 *
+		 * @return object
+		 */
+		var payment_method_options = function( helper ) {
+			if ( "1" !== CHARITABLE_BRAINTREE_VARS.three_d_secure ) {
+				return {};
+			}
+
+			var billing = ( function() {
+				var billing = {},
+					billing_fields = [
+						{ field: 'first_name', key: 'givenName' },
+						{ field: 'last_name', key: 'surname' },
+						{ field: 'phone', key: 'phoneNumber' },
+						{ field: 'city', key: 'locality' },
+						{ field: 'country', key: 'countryCodeAlpha2' },
+						{ field: 'address', key: 'streetAddress' },
+						{ field: 'address_2', key: 'extendedAddress' },
+						{ field: 'postcode', key: 'postalCode' },
+						{ field: 'state', key: 'region' },
+					];
+
+				billing_fields.forEach( function( field ) {
+					var input = helper.get_input( field.field );
+
+					if ( input.length && input.val().length ) {
+						billing[field.key] = input.val();
+					}
+				} );
+
+				return billing;
+			} )();
+
+			return {
+				threeDSecure: {
+					email: helper.get_email(),
+					amount: helper.unformat_amount( helper.get_amount() ),
+					billingAddress: billing
+				}
+			};
+		}
+
+		/**
+		 * Set up drop-in as soon as the form is initialized.
+		 */
+		var init = function( helper ) {
+			braintree.dropin.create( dropin_config(), function ( createErr, instance ) {
 				/**
 				 * When the payment total changes, update Google Pay config.
 				 */
@@ -151,57 +159,30 @@
 
 					// If we have found no errors, create a token with Stripe
 					if ( helper.errors.length === 0 ) {
-
-						var options = {};
-
 						// Pause processing
-						add_pending_process( helper );
+						helper.add_pending_process( 'braintree' );
 
-						if ( "1" === CHARITABLE_BRAINTREE_VARS.three_d_secure ) {
-							var billing = ( function() {
-								var billing = {},
-									billing_fields = [
-										{ field: 'first_name', key: 'givenName' },
-										{ field: 'last_name', key: 'surname' },
-										{ field: 'phone', key: 'phoneNumber' },
-										{ field: 'city', key: 'locality' },
-										{ field: 'country', key: 'countryCodeAlpha2' },
-										{ field: 'address', key: 'streetAddress' },
-										{ field: 'address_2', key: 'extendedAddress' },
-										{ field: 'postcode', key: 'postalCode' },
-										{ field: 'state', key: 'region' },
-									];
-
-								billing_fields.forEach( function( field ) {
-									var input = helper.get_input( field.field );
-
-									if ( input.length && input.val().length ) {
-										billing[field.key] = input.val();
-									}
-								} );
-
-								return billing;
-							} )();
-
-							options.threeDSecure = {
-								email: helper.get_email(),
-								amount: helper.unformat_amount( helper.get_amount() ),
-								billingAddress: billing
-							}
-						}
-
-						instance.requestPaymentMethod( options, function ( err, payload ) {
+						instance.requestPaymentMethod( payment_method_options( helper ), function ( err, payload ) {
 							if ( err ) {
-								helper.add_error( err.message + ' [' + err.name + ']' );
-								remove_pending_process( helper );
+								helper.prevent_scroll_to_top = true;
+								helper.remove_pending_process_by_name( 'braintree' );
 								return false;
 							}
 
-							helper.get_input( 'braintree_token' ).val( payload.nonce );
+							helper.get_input( 'braintree_nonce' ).val( payload.nonce );
 							helper.get_input( 'braintree_device_data' ).val( payload.deviceData );
 
-							remove_pending_process( helper );
+							helper.remove_pending_process_by_name( 'braintree' );
 						} );
+					}
+				} );
+
+				/**
+				 * If processing fails, clear the selected payment method.
+				 */
+				$body.on( 'charitable:form:processed', function( event, response, helper ) {
+					if ( ! response.success ) {
+						instance.clearSelectedPaymentMethod();
 					}
 				} );
 			} );

@@ -20,22 +20,11 @@ class ComposerStaticInit00e883ce1fb5147076175b5ec2e060fe
         ),
     );
 
-    public static $prefixesPsr0 = array (
-        'B' => 
-        array (
-            'Braintree' => 
-            array (
-                0 => __DIR__ . '/..' . '/braintree/braintree_php/lib',
-            ),
-        ),
-    );
-
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInit00e883ce1fb5147076175b5ec2e060fe::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInit00e883ce1fb5147076175b5ec2e060fe::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit00e883ce1fb5147076175b5ec2e060fe::$prefixesPsr0;
 
         }, null, ClassLoader::class);
     }

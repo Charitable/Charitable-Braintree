@@ -41,7 +41,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 *
 		 * @since 1.0.0
 		 *
-		 * @var   Braintree_Gateway|false
+		 * @var   Braintree\Gateway|false
 		 */
 		private $braintree_live;
 
@@ -50,7 +50,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 *
 		 * @since 1.0.0
 		 *
-		 * @var   Braintree_Gateway|false
+		 * @var   Braintree\Gateway|false
 		 */
 		private $braintree_test;
 
@@ -490,7 +490,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 					'content'  => '<div id="charitable-braintree-dropin-container"></div>',
 					'priority' => 1,
 				],
-				'braintree_token'   => [
+				'braintree_nonce'   => [
 					'type'     => 'hidden',
 					'value'    => '',
 					'priority' => 2,
@@ -501,7 +501,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 				$fields['braintree_device_data'] = [
 					'type'     => 'hidden',
 					'value'    => '',
-					'priority' => 3,
+					'priority' => 2,
 				];
 			}
 
@@ -535,7 +535,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		}
 
 		/**
-		 * Return the Braintree_Gateway instance.
+		 * Return the Braintree\Gateway instance.
 		 *
 		 * @since  1.0.0
 		 *
@@ -543,7 +543,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 *                                 will use the current site Test Mode setting.
 		 * @param  array        $keys      If set, will use these keys for getting the
 		 *                                 instance. Otherwise, will use get_keys().
-		 * @return Braintree_Gateway|false Braintree_Gateway instance if keys are set. False otherwise.
+		 * @return Braintree\Gateway|false Braintree\Gateway instance if keys are set. False otherwise.
 		 */
 		public function get_gateway_instance( $test_mode = null, $keys = [] ) {
 			if ( is_null( $test_mode ) ) {
@@ -563,7 +563,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 					return false;
 				}
 
-				$this->$prop = new Braintree_Gateway(
+				$this->$prop = new Braintree\Gateway(
 					[
 						'environment' => $test_mode ? 'sandbox' : 'production',
 						'merchantId'  => $keys['merchant_id'],
@@ -721,7 +721,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 			try {
 				$this->get_gateway_instance( $test_mode )->customer()->find( $customer_id );
 				return $customer_id;
-			} catch ( Braintree_Exception_NotFound $e ) {
+			} catch ( Braintree\Exception\NotFound $e ) {
 				return false;
 			}
 		}
@@ -765,7 +765,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 				return false;
 			}
 
-			if ( ! isset( $values['gateways']['braintree']['braintree_token'] ) ) {
+			if ( ! isset( $values['gateways']['braintree']['braintree_nonce'] ) ) {
 				charitable_get_notices()->add_error( __( 'Missing payment for Braintree payment gateway. Unable to proceed with payment.', 'charitable-braintree' ) );
 				return false;
 			}
@@ -783,9 +783,9 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 		 * @return array
 		 */
 		public function add_hidden_braintree_fields_to_data( $fields, $submitted ) {
-			$token = isset( $submitted['braintree_token'] ) ? $submitted['braintree_token'] : false;
+			$nonce = isset( $submitted['braintree_nonce'] ) ? $submitted['braintree_nonce'] : false;
 
-			$fields['gateways']['braintree']['token'] = $token;
+			$fields['gateways']['braintree']['nonce'] = $nonce;
 
 			if ( isset( $submitted['braintree_device_data'] ) ) {
 				$fields['gateways']['braintree']['device_data'] = $submitted['braintree_device_data'];
