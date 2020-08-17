@@ -71,6 +71,15 @@ if ( ! class_exists( 'Charitable_Braintree' ) ) :
 		private $directory_url;
 
 		/**
+		 * Available recurring donation periods.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @var   array
+		 */
+		private $available_periods;
+
+		/**
 		 * Create class instance.
 		 *
 		 * @since 1.0.0
@@ -268,6 +277,17 @@ if ( ! class_exists( 'Charitable_Braintree' ) ) :
 			add_action( 'charitable_process_ipn_braintree', [ 'Charitable_Braintree_Webhook_Processor', 'process' ] );
 
 			/**
+			 * Disable unavailable plan periods on the front-end. Super hacky!
+			 */
+			add_filter( 'charitable_recurring_periods_adverbs', [ $this, 'disable_unavailable_recurring_donation_periods' ] );
+			add_filter( 'charitable_recurring_periods', [ $this, 'disable_unavailable_recurring_donation_periods' ] );
+
+			/**
+			 * Show periods as disabled if no plans exist in Braintree.
+			 */
+			add_filter( 'charitable_recurring_default_campaign_fields', [ $this, 'disable_recurring_donation_periods_for_campaign' ] );
+
+			/**
 			 * Set up upgrade process.
 			 */
 			// add_action( 'admin_notices', array( Charitable_Braintree_Upgrade::get_instance(), 'add_upgrade_notice' ) );
@@ -339,6 +359,108 @@ if ( ! class_exists( 'Charitable_Braintree' ) ) :
 				$version,
 				true
 			);
+		}
+
+		/**
+		 * Disable weekly recurring donations.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  array $periods List of supported periods.
+		 * @return array
+		 */
+		public function disable_weekly_recurring_donations( $periods ) {
+			if ( array_key_exists( 'week', $periods ) ) {
+				unset( $periods['week'] );
+			}
+
+			return $periods;
+		}
+
+		/**
+		 * Disable unavailable recurring donation periods on the front-end.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  array $periods The list of periods.
+		 * @return array
+		 */
+		public function disable_unavailable_recurring_donation_periods( $periods ) {
+			/* Get rid of weekly since that is not possible with Braintree. */
+			if ( array_key_exists( 'week', $periods ) ) {
+				unset( $periods['week'] );
+			}
+
+			/* This only applies to front-end requests. */
+			if ( is_admin( $periods ) ) {
+				return $periods;
+			}
+
+			$available = $this->get_available_periods();
+
+			return array_intersect_key(
+				$periods,
+				array_flip( $this->get_available_periods() )
+			);
+		}
+
+		/**
+		 * Show as disabled any recurring donation periods that do
+		 * not currently have a corresponding plan in Braintree.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  array $fields Campaign fields added by Recurring Donations.
+		 * @return array
+		 */
+		public function disable_recurring_donation_periods_for_campaign( $fields ) {
+			if ( ! array_key_exists( 'recurring_donation_period', $fields ) ) {
+				return $fields;
+			}
+
+			$options   = $fields['recurring_donation_period']['admin_form']['options'];
+			$available = $this->get_available_periods();
+
+			foreach ( $options as $option => $label ) {
+				if ( ! in_array( $option, $available ) ) {
+					$options[ $option ] = sprintf(
+						__( '%1$s - <a href="%2$s" target="_blank">Create a plan in Braintree</a>', 'charitable-braintree' ),
+						$label,
+						charitable_braintree_get_new_plan_link( charitable_get_option( 'test_mode' ) )
+					);
+				}
+			}
+
+			$fields['recurring_donation_period']['admin_form']['options']                         = $options;
+			$fields['recurring_donation_period']['admin_form']['attrs']['data-available-periods'] = json_encode( array_values( $available ) );
+
+			return $fields;
+		}
+
+		/**
+		 * Get any available recurring donation periods.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @return array
+		 */
+		public function get_available_periods() {
+			if ( ! isset( $this->available_periods ) ) {
+				$periods = [ 'month', 'quarter', 'semiannual', 'year' ];
+				$plans   = new Charitable_Braintree_Plans( charitable_get_option( 'test_mode' ) );
+
+				foreach ( $periods as $idx => $period ) {
+					$plan = $plans->get_plans_by_period( $period );
+
+					if ( empty( $plan ) ) {
+						unset( $periods[ $idx ] );
+					}
+				}
+
+				$this->available_periods = $periods;
+			}
+
+			return $this->available_periods;
 		}
 
 		/**

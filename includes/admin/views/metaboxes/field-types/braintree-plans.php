@@ -37,7 +37,7 @@ $defaults      = charitable_braintree_get_default_plans( $view_args['test_mode']
 				<tr data-period="<?php echo esc_attr( $period ); ?>">
 					<th><?php echo ucfirst( charitable_recurring_get_donation_period_adverb( $period ) ); ?></th>
 					<td>
-						<?php if ( count( $period_plans ) ) : ?>
+						<?php if ( ! is_null( $period_plans ) && count( $period_plans ) ) : ?>
 							<select name="<?php echo esc_attr( $view_args['key'] ); ?>[<?php echo esc_attr( $period ); ?>]">
 								<?php
 								foreach ( $period_plans as $plan_id => $plan_name ) :

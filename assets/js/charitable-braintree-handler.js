@@ -139,7 +139,7 @@
 		 * Set up drop-in as soon as the form is initialized.
 		 */
 		var init = function( helper ) {
-			braintree.dropin.create( dropin_config(), function ( createErr, instance ) {
+			braintree.dropin.create( dropin_config( helper ), function ( createErr, instance ) {
 				/**
 				 * When the payment total changes, update Google Pay config.
 				 */

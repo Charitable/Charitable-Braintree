@@ -19,7 +19,12 @@
 
 		// Get frequency choice.
 		var get_frequency_choice = function() {
-			return get_field( '_campaign_recurring_donation_frequency_mode' ).val();
+			var field = get_field( '_campaign_recurring_donation_frequency_mode' );
+			if ( field.length ) {
+				return field.val();
+			}
+
+			return get_field( '_campaign_recurring_donation_period_mode' ).val();
 		}
 
 		// Get period.
@@ -61,12 +66,27 @@
 			return show_period_plans();
 		}
 
+		// Update list of donation periods, convering unavailable options to 'disabled'.
+		var update_period_list = function() {
+			var $field    = $( '#charitable-campaign-recurring-donation-period-wrap' );
+			var available = $field.data( 'available-periods' );
+
+			$field.find( '[name=_campaign_recurring_donation_period]' ).each( function() {
+				if ( -1 === available.indexOf( this.value ) ) {
+					this.disabled = true;
+					this.checked = false;
+				}
+			} );
+		}
+
 		// Init.
 		update_plan_tables();
+		update_period_list();
 
 		// Set up event listeners.
 		$( '[name=_campaign_recurring_donation_mode]' ).on( 'change', update_plan_tables );
 		$( '[name=_campaign_recurring_donation_frequency_mode]' ).on( 'change', update_plan_tables );
+		$( '[name=_campaign_recurring_donation_period_mode]' ).on( 'change', update_plan_tables );
 		$( '[name=_campaign_recurring_donation_period]' ).on( 'change', update_plan_tables );
 	};
 
