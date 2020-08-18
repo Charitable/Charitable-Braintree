@@ -36,6 +36,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 			$this->braintree = $this->gateway->get_gateway_instance( null, $keys );
 
 			if ( ! $this->braintree ) {
+				error_log( var_export( 1, true ) );
 				return false;
 			}
 
@@ -45,7 +46,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 
 			/* Check if we previously created a customer id for this donation. */
 			if ( ! $customer_id ) {
-				$customer_id            = get_post_meta( $this->donation->ID, 'braintree_customer_id', true );
+				$customer_id = get_post_meta( $this->donation->ID, 'braintree_customer_id', true );
 			}
 
 			if ( ! $customer_id ) {
@@ -54,6 +55,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 
 				if ( ! $customer_id ) {
 					$this->donation_log->add( __( 'Unable to set up customer in the Braintree Vault.', 'charitable-braintree' ) );
+					error_log( var_export( 2, true ) );
 					return false;
 				}
 
@@ -65,6 +67,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 			$payment = $this->get_payment_data( $customer_id, $vaulted_payment_method );
 
 			if ( ! $payment ) {
+				error_log( var_export( 3, true ) );
 				return false;
 			}
 

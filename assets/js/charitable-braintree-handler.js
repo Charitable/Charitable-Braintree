@@ -172,6 +172,10 @@
 							helper.get_input( 'braintree_nonce' ).val( payload.nonce );
 							helper.get_input( 'braintree_device_data' ).val( payload.deviceData );
 
+							if ( payload.hasOwnProperty( 'threeDSecureInfo' ) ) {
+								helper.get_input( 'braintree_authentication_id' ).val( payload.threeDSecureInfo.threeDSecureAuthenticationId );
+							}
+
 							helper.remove_pending_process_by_name( 'braintree' );
 						} );
 					}

@@ -65,7 +65,8 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 			/**
 			 * Get the customer id.
 			 */
-			$customer_id = $this->gateway->get_braintree_customer_id();
+			$customer_id            = $this->gateway->get_braintree_customer_id();
+			$vaulted_payment_method = $customer_id !== false;
 
 			if ( ! $customer_id ) {
 				/**
@@ -78,12 +79,10 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 				return false;
 			}
 
-			/**
-			 * Create a payment method in the Vault, adding it to the customer.
-			 */
-			$payment_method = $this->create_payment_method( $customer_id );
+			/* Get the payment data. */
+			$payment = $this->get_payment_data( $customer_id, $vaulted_payment_method );
 
-			if ( ! $payment_method ) {
+			if ( ! $payment ) {
 				return false;
 			}
 
@@ -113,6 +112,20 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 			}
 
 			foreach ( $plans as $plan_id => $details ) {
+				$data = [
+					'planId'                => $plan_id,
+					'price'                 => array_sum( $details['amount'] ),
+					'descriptor'            => [
+						'name' => $this->get_descriptor_name(),
+						'url'  => substr( $url_parts['host'], 0, 13 ),
+					],
+					'merchantAccountId'     => $this->get_merchant_account_id(),
+					'numberOfBillingCycles' => $this->get_subscription_cycles(),
+				];
+
+				/* Merge in the payment data. */
+				$data = array_merge( $payment, $data );
+
 				/**
 				 * Filter the subscription data.
 				 *
@@ -121,30 +134,14 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 				 * @param array                                  $data      Subscription data.
 				 * @param Charitable_Braintree_Gateway_Processor $processor This instance of `Charitable_Braintree_Gateway_Processor`.
 				 */
-				$data = apply_filters(
-					'charitable_braintree_subscription_data',
-					[
-						'planId'                => $plan_id,
-						'paymentMethodToken'    => $payment_method,
-						'price'                 => array_sum( $details['amount'] ),
-						'descriptor'            => [
-							'name' => $this->get_descriptor_name(),
-							'url'  => substr( $url_parts['host'], 0, 13 ),
-						],
-						'merchantAccountId'     => $this->get_merchant_account_id(),
-						'numberOfBillingCycles' => $this->get_subscription_cycles(),
-					],
-					$this
-				);
+				$data = apply_filters( 'charitable_braintree_subscription_data', $data, $this );
 
+			error_log( var_export( __METHOD__, true ) );
+			error_log( var_export( $data, true ) );
 				try {
 					$result = $this->braintree->subscription()->create( $data );
-
+				error_log( var_export( $result, true ) );
 					if ( ! $result->success ) {
-						if ( defined( 'CHARITABLE_DEBUG' ) && CHARITABLE_DEBUG ) {
-							error_log( var_export( $result->errors->deepAll(), true ) );
-						}
-
 						charitable_get_notices()->add_error( __( 'Subscription not processed successfully in payment gateway.', 'charitable-braintree' ) );
 						return false;
 					}

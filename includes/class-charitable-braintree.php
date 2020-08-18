@@ -331,26 +331,6 @@ if ( ! class_exists( 'Charitable_Braintree' ) ) :
 				'jquery-core',
 			];
 
-			// if ( 0 !== $this->gateway->get_fraud_protection() ) {
-			// 	wp_register_script(
-			// 		'charitable-braintree-web-client',
-			// 		'https://js.braintreegateway.com/web/3.64.1/js/client.min.js',
-			// 		[],
-			// 		'3.64.1',
-			// 		true
-			// 	);
-
-			// 	wp_register_script(
-			// 		'charitable-braintree-web-data-collector',
-			// 		'https://js.braintreegateway.com/web/3.64.1/js/data-collector.min.js',
-			// 		[ 'charitable-braintree-web-client' ],
-			// 		'3.64.1',
-			// 		true
-			// 	);
-
-			// 	$dependencies[] = 'charitable-braintree-web-data-collector';
-			// }
-
 			/* Register our Braintree handler. */
 			wp_register_script(
 				'charitable-braintree-handler',

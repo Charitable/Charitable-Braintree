@@ -218,6 +218,8 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 		 * @return array
 		 */
 		public function get_payment_data( $customer_id, $vaulted_payment_method ) {
+			$payment_data = [];
+
 			if ( ! $vaulted_payment_method ) {
 				/* Create a payment method in the Vault, adding it to the customer. */
 				$payment_method = $this->create_payment_method( $customer_id );
@@ -227,10 +229,10 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 					return false;
 				}
 
-				$payment_data['paymentMethodToken'] = $payment_method['token'];
+				$payment_data = [ 'paymentMethodToken' => $payment_method ];
 
-				if ( array_key_exists( 'authentication_id', $payment_method ) ) {
-					$payment_data['threeDSecureAuthenticationId'] = $payment_method['authentication_id'];
+				if ( $this->get_gateway_value_from_processor( 'authentication_id' ) ) {
+					$payment_data['threeDSecureAuthenticationId'] = $this->get_gateway_value_from_processor( 'authentication_id' );
 				}
 
 				return $payment_data;
@@ -262,7 +264,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 		 * @since  1.0.0
 		 *
 		 * @param  string $customer_id The customer id.
-		 * @return array|false Payment method token & optionally a 3d secure authentication id, if successful.
+		 * @return string|false Payment method token if successful.
 		 */
 		public function create_payment_method( $customer_id ) {
 			$data = [
@@ -302,21 +304,11 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 			 */
 			$data = apply_filters( 'charitable_braintree_payment_method_data', $data, $this );
 
-			error_log( var_export( __METHOD__, true ) );
-			error_log( var_export( $data, true ) );
 			try {
 				$result = $this->braintree->paymentMethod()->create( $data );
 
-				error_log( var_export( $result, true ) );
-
-				if ( $result->success ) {
-					$data = [ 'token' => $result->paymentMethod->token  ]; // phpcs:ignore
-
-					if ( isset( $result->paymentMethod->verification->threeDSecureInfo->threeDSecureAuthenticationId ) ) { // phpcs:ignore
-						$data['authentication_id'] = $result->paymentMethod->verification->threeDSecureInfo->threeDSecureAuthenticationId; // phpcs:ignore
-					}
-
-					return $data;
+				if ( $result->success && $this->three_d_verified( $result->paymentMethod ) ) { // phpcs:ignore
+					return $result->paymentMethod->token; // phpcs:ignore
 				}
 
 				return false;
@@ -328,6 +320,63 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 
 				return false;
 			}
+		}
+
+		/**
+		 * Checks whether there was a 3D verification check and, if there was,
+		 * whether it was successful.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  object $payment_method The payment method received from Braintree.
+		 * @return boolean
+		 */
+		public function three_d_verified( $payment_method ) {
+			/* If there was no verification or no 3D info, return true. */
+			if ( ! isset( $payment_method->verification ) || ! isset( $payment_method->verification->threeDSecureInfo ) ) {
+				return true;
+			}
+
+			$this->donation_log->add(
+				sprintf(
+					/* translators: %s: verification status */
+					__( '3D verification status: %s', 'charitable-braintree' ),
+					$payment_method->verification->threeDSecureInfo->status
+				)
+			);
+
+			/**
+			 * Filter the statuses that will result in a verification being
+			 * returned as failed.
+			 *
+			 * @see https://developers.braintreepayments.com/guides/3d-secure/server-side/php#status-codes
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param array $statuses The statuses that will result in failure.
+			 */
+			$failed_statuses = apply_filters(
+				'charitable_braintree_3dsecure_failed_statuses',
+				[
+					'authenticate_error',
+					'authenticate_failed',
+					'authenticate_signature_verification_failed',
+					'authenticate_unable_to_authenticate',
+					'lookup_enrolled',
+					'challenge_required',
+					'authenticate_rejected',
+				]
+			);
+
+			if ( ! in_array( $payment_method->verification->threeDSecureInfo->status, $failed_statuses ) ) {
+				return true;
+			}
+
+			charitable_get_notices()->add_error(
+				__( 'Your card details did not pass the payment processor\'s 3D Secure verification check. Please retry your donation with an alternative payment method.', 'charitable-braintree' )
+			);
+
+			return false;
 		}
 
 		/**

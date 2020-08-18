@@ -505,6 +505,14 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 				];
 			}
 
+			if ( $this->get_value( 'enable_3d_secure' ) ) {
+				$fields['braintree_authentication_id'] = [
+					'type'     => 'hidden',
+					'value'    => '',
+					'priority' => 2,
+				];
+			}
+
 			return array_merge( $gateway_fields, $fields );
 		}
 
@@ -789,6 +797,10 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 
 			if ( isset( $submitted['braintree_device_data'] ) ) {
 				$fields['gateways']['braintree']['device_data'] = $submitted['braintree_device_data'];
+			}
+
+			if ( isset( $submitted['braintree_authentication_id'] ) ) {
+				$fields['gateways']['braintree']['authentication_id'] = $submitted['braintree_authentication_id'];
 			}
 
 			return $fields;

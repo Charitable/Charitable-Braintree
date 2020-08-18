@@ -360,7 +360,6 @@ if ( ! class_exists( 'Charitable_Braintree_Webhook_Processor' ) ) :
 
 			try {
 				return $braintree->webhookNotification()->parse( $_POST['bt_signature'], $_POST['bt_payload'] );
-
 			} catch ( Exception $e ) {
 				if ( defined( 'CHARITABLE_DEBUG' ) && CHARITABLE_DEBUG ) {
 					error_log( get_class( $e ) );
