@@ -102,12 +102,22 @@ if ( ! class_exists( 'Charitable_Braintree_Plans' ) ) :
 				return $as_list ? $this->format_as_options( $plans, $default_choice ) : false;
 			}
 
+			$currency = charitable_get_option( 'currency', 'AUD' );
+
 			$plans = array_reduce(
 				$plans,
-				function( $carry, $plan ) use ( $frequency ) {
-					if ( $plan->billingFrequency == $frequency ) { // phpcs:ignore
-						$carry[] = $plan;
+				function( $carry, $plan ) use ( $frequency, $currency ) {
+					/* Mis-matched frequency. */
+					if ( $plan->billingFrequency != $frequency ) { // phpcs:ignore
+						return $carry;
 					}
+
+					/* Mis-matched currency. */
+					if ( $plan->currencyIsoCode != $currency ) { // phpcs:ignore
+						return $carry;
+					}
+
+					$carry[] = $plan;
 
 					return $carry;
 				},

@@ -204,61 +204,6 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 		}
 
 		/**
-		 * Return the payment data to use for a particular transaction or subscription.
-		 *
-		 * When a payment method already exists in the vault, the transaction is made using
-		 * the nonce. When it does not yet exist in the vault, we first create the payment
-		 * method, which returns an array containing the token and possibly an authenctication
-		 * id, if 3D Secure is being used.
-		 *
-		 * @since  1.0.0
-		 *
-		 * @param  string  $customer_id            The customer id.
-		 * @param  boolean $vaulted_payment_method Whether the payment method has already been vaulted.
-		 * @return array
-		 */
-		public function get_payment_data( $customer_id, $vaulted_payment_method ) {
-			$payment_data = [];
-
-			if ( ! $vaulted_payment_method ) {
-				/* Create a payment method in the Vault, adding it to the customer. */
-				$payment_method = $this->create_payment_method( $customer_id );
-
-				if ( ! $payment_method ) {
-					$this->donation_log->add( __( 'Unable to add payment method.', 'charitable-braintree' ) );
-					return false;
-				}
-
-				$payment_data = [ 'paymentMethodToken' => $payment_method ];
-
-				if ( $this->get_gateway_value_from_processor( 'authentication_id' ) ) {
-					$payment_data['threeDSecureAuthenticationId'] = $this->get_gateway_value_from_processor( 'authentication_id' );
-				}
-
-				return $payment_data;
-			}
-
-			$payment_data = [
-				'paymentMethodNonce' => $this->get_gateway_value_from_processor( 'nonce' ),
-			];
-
-			/* Maybe include 3D Secure. */
-			if ( $this->gateway->get_value( 'enable_3d_secure' ) ) {
-				$payment_data['options'] = [
-					'threeDSecure' => [ 'required' => true ],
-				];
-			}
-
-			$device_data = $this->get_gateway_value_from_processor( 'device_data' );
-
-			if ( $device_data ) {
-				$payment_data['deviceData'] = $device_data;
-			}
-
-			return $payment_data;
-		}
-
-		/**
 		 * Create a new payment method in Braintree.
 		 *
 		 * @since  1.0.0
@@ -466,6 +411,72 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor' ) ) :
 		 */
 		public function sanitize_description( $descriptor ) {
 			return preg_replace( '([^A-Za-z0-9.+-])', ' ', $descriptor );
+		}
+
+		/**
+		 * Set notices explaining why the transaction failed.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  Braintree\Result $result The result returned by Braintree.
+		 * @return void
+		 */
+		public function set_transaction_failed_notices( $result ) {
+			$notices = charitable_get_notices();
+
+			if ( count( $result->errors->deepAll() ) ) {
+				$notices->add_error( __( 'Your donation could not be processed due to the following errors:', 'charitable-braintree' ) );
+				$notices->add_error( $this->get_result_errors_notice( $result ) );
+				return;
+			}
+
+			switch ( strtoupper( $result->transaction->status ) ) {
+				case 'FAILED':
+					$message = __( 'Your donation failed due to an error during processing. Please retry your donation.', 'charitable-braintree' );
+					break;
+
+				case 'GATEWAY_REJECTED':
+					$message = sprintf(
+						/* translators: %s: gateway rejection reason */
+						__( 'Your payment was rejected by our payment processor with the following error: %s. Please retry your donation with an alternative payment method.', 'charitable-braintree' ),
+						$result->transaction->gatewayRejectionReason
+					);
+					break;
+
+				case 'PROCESSOR_DECLINED':
+					$message = sprintf(
+						/* translators: %s: processor response text */
+						__( 'Your donation was declined by the payment processor with the following error: %s', 'charitable-braintree' ),
+						$result->transaction->processorResponseText
+					);
+					break;
+			}
+
+			if ( ! isset( $message ) ) {
+				return;
+			}
+
+			$notices->add_error( $message );
+		}
+
+		/**
+		 * Return the errors as a string.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  Braintree\Result $result The result returned by Braintree.
+		 * @return string
+		 */
+		public function get_result_errors_notice( $result ) {
+			$errors = '<ul>';
+
+			foreach ( $result->errors->deepAll() as $error ) {
+				$errors .= sprintf( '<li>%1$s (%2$s)</li>', $error->message, $error->code );
+			}
+
+			$errors .= '</ul>';
+
+			return $errors;
 		}
 	}
 

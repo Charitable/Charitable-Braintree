@@ -93,7 +93,7 @@ if ( ! class_exists( 'Charitable_Braintree_Admin' ) ) :
 					)
 				);
 
-				$links[] = '<a href="' . $activate_url . '">' . __( 'Activate Braintree Gateway', 'charitable-braintree' ) . '</a>';
+				$links[] = '<a href="' . $activate_url . '">' . __( 'Activate Braintree gateway', 'charitable-braintree' ) . '</a>';
 			}
 
 			return $links;

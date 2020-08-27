@@ -79,10 +79,9 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 				return false;
 			}
 
-			/* Get the payment data. */
-			$payment = $this->get_payment_data( $customer_id, $vaulted_payment_method );
+			$payment_data = $this->get_payment_data( $customer_id, $vaulted_payment_method );
 
-			if ( ! $payment ) {
+			if ( ! $payment_data ) {
 				return false;
 			}
 
@@ -112,19 +111,25 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 			}
 
 			foreach ( $plans as $plan_id => $details ) {
+				$cycles = $this->get_subscription_cycles();
+
 				$data = [
-					'planId'                => $plan_id,
-					'price'                 => array_sum( $details['amount'] ),
-					'descriptor'            => [
+					'planId'            => $plan_id,
+					'price'             => array_sum( $details['amount'] ),
+					'descriptor'        => [
 						'name' => $this->get_descriptor_name(),
 						'url'  => substr( $url_parts['host'], 0, 13 ),
 					],
-					'merchantAccountId'     => $this->get_merchant_account_id(),
-					'numberOfBillingCycles' => $this->get_subscription_cycles(),
+					'merchantAccountId' => $this->get_merchant_account_id(),
 				];
 
-				/* Merge in the payment data. */
-				$data = array_merge( $payment, $data );
+				$data = array_merge( $data, $payment_data );
+
+				if ( 0 === $cycles ) {
+					$data['neverExpires'] = true;
+				} else {
+					$data['numberOfBillingCycles'] = $this->get_subscription_cycles();
+				}
 
 				/**
 				 * Filter the subscription data.
@@ -136,13 +141,11 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 				 */
 				$data = apply_filters( 'charitable_braintree_subscription_data', $data, $this );
 
-			error_log( var_export( __METHOD__, true ) );
-			error_log( var_export( $data, true ) );
 				try {
 					$result = $this->braintree->subscription()->create( $data );
-				error_log( var_export( $result, true ) );
+
 					if ( ! $result->success ) {
-						charitable_get_notices()->add_error( __( 'Subscription not processed successfully in payment gateway.', 'charitable-braintree' ) );
+						$this->set_transaction_failed_notices( $result );
 						return false;
 					}
 
@@ -212,6 +215,33 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 		}
 
 		/**
+		 * Return the payment data to use for a particular subscription.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  string  $customer_id            The customer ID.
+		 * @param  boolean $vaulted_payment_method Whether the payment method has been vaulted
+		 * @return array|false
+		 */
+		public function get_payment_data( $customer_id, $vaulted_payment_method ) {
+			if ( $vaulted_payment_method ) {
+				return [
+					'paymentMethodNonce' => $this->get_gateway_value_from_processor( 'nonce' ),
+				];
+			}
+
+			$token = $this->create_payment_method( $customer_id );
+
+			if ( ! $token ) {
+				return false;
+			}
+
+			return [
+				'paymentMethodToken' => $token,
+			];
+		}
+
+		/**
 		 * Return the plan id to use for a campaign donation.
 		 *
 		 * @since  1.0.0
@@ -246,6 +276,52 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_Recurring' ) ) :
 		 */
 		public function get_subscription_cycles() {
 			return method_exists( $this->recurring, 'get_donation_length' ) ? (int) $this->recurring->get_donation_length() : 0;
+		}
+
+		/**
+		 * Set notices explaining why the subscription failed.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @param  Braintree\Result $result The result returned by Braintree.
+		 * @return void
+		 */
+		public function set_subscription_failed_notices( $result ) {
+			$notices = charitable_get_notices();
+
+			if ( count( $result->errors->deepAll() ) ) {
+				$notices->add_error( __( 'Your recurring donation could not be created due to the following errors:', 'charitable-braintree' ) );
+				$notices->add_error( $this->get_result_errors_notice( $result ) );
+				return;
+			}
+
+			switch ( strtoupper( $result->transaction->status ) ) {
+				case 'FAILED':
+					$message = __( 'Your donation failed due to an error during processing. Please retry your donation.', 'charitable-braintree' );
+					break;
+
+				case 'GATEWAY_REJECTED':
+					$message = sprintf(
+						/* translators: %s: gateway rejection reason */
+						__( 'Your payment was rejected by our payment processor with the following error: %s. Please retry your donation with an alternative payment method.', 'charitable-braintree' ),
+						$result->transaction->gatewayRejectionReason
+					);
+					break;
+
+				case 'PROCESSOR_DECLINED':
+					$message = sprintf(
+						/* translators: %s: processor response text */
+						__( 'Your donation was declined by the payment processor with the following error: %s', 'charitable-braintree' ),
+						$result->transaction->processorResponseText
+					);
+					break;
+			}
+
+			if ( ! isset( $message ) ) {
+				return;
+			}
+
+			$notices->add_error( $message );
 		}
 	}
 

@@ -301,10 +301,15 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 							'data-trigger-value' => 'checked',
 						],
 					],
+					'section_3d_secure' => [
+						'title'    => __( '3D Secure', 'charitable-braintree' ),
+						'type'     => 'heading',
+						'priority' => 30,
+					],
 					'enable_3d_secure'       => [
 						'type'     => 'checkbox',
 						'title'    => __( 'Enable 3D Secure', 'charitable-braintree' ),
-						'priority' => 25,
+						'priority' => 31,
 					],
 				]
 			);
@@ -316,13 +321,13 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 						'section_recurring_billing' => [
 							'title'    => __( 'Recurring Billing', 'charitable-braintree' ),
 							'type'     => 'heading',
-							'priority' => 30,
+							'priority' => 40,
 						],
 						'default_live_plans'        => [
 							'type'      => 'braintree-plans',
 							'base_path' => charitable_braintree()->get_path( 'includes', true ) . 'admin/views/',
 							'title'     => __( 'Default Live Plans', 'charitable-braintree' ),
-							'priority'  => 31,
+							'priority'  => 41,
 							'test_mode' => false,
 							'help'      => __( 'Select default Braintree plans to use for any subscriptions created by Charitable. You can override this on a per-campaign basis.', 'charitable-braintree' ),
 						],
@@ -330,7 +335,7 @@ if ( ! class_exists( 'Charitable_Gateway_Braintree' ) ) :
 							'type'      => 'braintree-plans',
 							'base_path' => charitable_braintree()->get_path( 'includes', true ) . 'admin/views/',
 							'title'     => __( 'Default Test Plans', 'charitable-braintree' ),
-							'priority'  => 32,
+							'priority'  => 42,
 							'test_mode' => true,
 							'help'      => __( 'Select default Braintree plans to use for any subscriptions created by Charitable. You can override this on a per-campaign basis.', 'charitable-braintree' ),
 						],

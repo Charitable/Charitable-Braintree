@@ -36,7 +36,6 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 			$this->braintree = $this->gateway->get_gateway_instance( null, $keys );
 
 			if ( ! $this->braintree ) {
-				error_log( var_export( 1, true ) );
 				return false;
 			}
 
@@ -55,20 +54,11 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 
 				if ( ! $customer_id ) {
 					$this->donation_log->add( __( 'Unable to set up customer in the Braintree Vault.', 'charitable-braintree' ) );
-					error_log( var_export( 2, true ) );
 					return false;
 				}
 
 				/* Record the customer id. */
 				update_post_meta( $this->donation->ID, 'braintree_customer_id', $customer_id );
-			}
-
-			/* Get the payment data. */
-			$payment = $this->get_payment_data( $customer_id, $vaulted_payment_method );
-
-			if ( ! $payment ) {
-				error_log( var_export( 3, true ) );
-				return false;
 			}
 
 			/* Prepare sale transaction data. */
@@ -86,7 +76,10 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 			];
 
 			/* Merge in the payment data. */
-			$transaction_data = array_merge( $payment, $transaction_data );
+			$transaction_data = array_merge_recursive(
+				$transaction_data,
+				$this->get_payment_data()
+			);
 
 			/**
 			 * Filter the transaction data.
@@ -145,6 +138,35 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 		}
 
 		/**
+		 * Return the payment data to use for a particular transaction.
+		 *
+		 * @since  1.0.0
+		 *
+		 * @return array
+		 */
+		public function get_payment_data() {
+			$payment_data = [
+				'paymentMethodNonce' => $this->get_gateway_value_from_processor( 'nonce' ),
+				'options'            => [
+					'storeInVaultOnSuccess' => true,
+				],
+			];
+
+			/* Maybe include 3D Secure. */
+			if ( $this->gateway->get_value( 'enable_3d_secure' ) ) {
+				$payment_data['options']['threeDSecure'] = [ 'required' => true ];
+			}
+
+			$device_data = $this->get_gateway_value_from_processor( 'device_data' );
+
+			if ( $device_data ) {
+				$payment_data['deviceData'] = $device_data;
+			}
+
+			return $payment_data;
+		}
+
+		/**
 		 * Return the line items for the transaction.
 		 *
 		 * @since  1.0.0
@@ -183,7 +205,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 
 			if ( count( $result->errors->deepAll() ) ) {
 				$notices->add_error( __( 'Your donation could not be processed due to the following errors:', 'charitable-braintree' ) );
-				$notices->add_error( $this->get_transaction_result_errors_notice( $result ) );
+				$notices->add_error( $this->get_result_errors_notice( $result ) );
 				return;
 			}
 
@@ -214,26 +236,6 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 			}
 
 			$notices->add_error( $message );
-		}
-
-		/**
-		 * Return the transaction errors as a string.
-		 *
-		 * @since  1.0.0
-		 *
-		 * @param  Braintree\Result $result The result returned by Braintree.
-		 * @return string
-		 */
-		public function get_transaction_result_errors_notice( $result ) {
-			$errors = '<ul>';
-
-			foreach ( $result->errors->deepAll() as $error ) {
-				$errors .= sprintf( '<li>%1$s (%2$s)</li>', $error->message, $error->code );
-			}
-
-			$errors .= '</ul>';
-
-			return $errors;
 		}
 	}
 

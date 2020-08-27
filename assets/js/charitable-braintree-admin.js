@@ -74,14 +74,16 @@
 			$field.find( '[name=_campaign_recurring_donation_period]' ).each( function() {
 				if ( -1 === available.indexOf( this.value ) ) {
 					this.disabled = true;
-					this.checked = false;
+					if ( this.checked ) {
+						$field.find( '[name=_campaign_recurring_donation_period][value=' + available[0] + ']' )[0].checked = true;
+					}
 				}
 			} );
 		}
 
 		// Init.
-		update_plan_tables();
 		update_period_list();
+		update_plan_tables();
 
 		// Set up event listeners.
 		$( '[name=_campaign_recurring_donation_mode]' ).on( 'change', update_plan_tables );

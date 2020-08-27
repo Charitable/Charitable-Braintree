@@ -1,13 +1,13 @@
 <?php
 /**
  * Plugin Name:       Charitable - Braintree
- * Plugin URI:
- * Description:
- * Version:           1.0.0-beta.1
+ * Plugin URI:        https://www.wpcharitable.com/extensions/charitable-braintree/
+ * Description:       Accept donations with Braintree. Support card payments, PayPal, Apple Pay, Google Pay and Venmo.
+ * Version:           1.0.0
  * Author:            WP Charitable
  * Author URI:        https://www.wpcharitable.com
  * Requires at least: 5.0
- * Tested up to:      5.4.2
+ * Tested up to:      5.5
  *
  * Text Domain: charitable-braintree
  * Domain Path: /languages/
