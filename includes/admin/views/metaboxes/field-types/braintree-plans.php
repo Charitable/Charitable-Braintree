@@ -22,6 +22,10 @@ $values        = $view_args['value'];
 $new_plan_link = charitable_braintree_get_new_plan_link( $view_args['test_mode'] );
 $defaults      = charitable_braintree_get_default_plans( $view_args['test_mode'] );
 
+if ( ! is_array( $values ) || empty( $values ) ) {
+	$values = $defaults;
+}
+
 ?>
 <fieldset id="<?php echo esc_attr( $view_args['wrapper_id'] ); ?>" class="<?php echo esc_attr( $view_args['wrapper_class'] ); ?>" <?php echo charitable_get_arbitrary_attributes( $view_args ); ?>>
 	<?php if ( isset( $view_args['label'] ) ) : ?>
@@ -45,7 +49,7 @@ $defaults      = charitable_braintree_get_default_plans( $view_args['test_mode']
 										$plan_name .= __( ' - default', 'charitable-braintree' );
 									endif;
 									?>
-								<option value="<?php echo esc_attr( $plan_id ); ?>" <?php selected( $plan_id, $values[ $period ] ); ?>><?php echo $plan_name; ?></option>
+									<option value="<?php echo esc_attr( $plan_id ); ?>" <?php selected( $plan_id, $values[ $period ] ); ?>><?php echo $plan_name; ?></option>
 								<?php endforeach; ?>
 							</select>
 						<?php else : ?>
