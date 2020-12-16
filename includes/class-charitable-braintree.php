@@ -26,7 +26,7 @@ if ( ! class_exists( 'Charitable_Braintree' ) ) :
 	class Charitable_Braintree {
 
 		/** Plugin version. */
-		const VERSION = '1.0.0-beta.1';
+		const VERSION = '1.0.1';
 
 		/** The extension name. */
 		const NAME = 'Charitable Braintree';
@@ -326,16 +326,14 @@ if ( ! class_exists( 'Charitable_Braintree' ) ) :
 				true
 			);
 
-			$dependencies = [
-				'charitable-braintree-dropin',
-				'jquery-core',
-			];
-
 			/* Register our Braintree handler. */
 			wp_register_script(
 				'charitable-braintree-handler',
 				$this->get_path( 'directory', false ) . 'assets/js/charitable-braintree-handler' . $suffix . '.js',
-				$dependencies,
+				[
+					'charitable-braintree-dropin',
+					'charitable-script',
+				],
 				$version,
 				true
 			);

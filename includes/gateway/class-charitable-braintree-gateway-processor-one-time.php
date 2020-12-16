@@ -7,7 +7,7 @@
  * @copyright Copyright (c) 2020, Studio 164a
  * @license   http://opensource.org/licenses/gpl-2.0.php GNU Public License
  * @since     1.0.0
- * @version   1.0.0
+ * @version   1.0.1
  */
 
 // Exit if accessed directly.
@@ -177,7 +177,7 @@ if ( ! class_exists( 'Charitable_Braintree_Gateway_Processor_One_Time' ) ) :
 			$items = [];
 
 			foreach ( $this->donation->get_campaign_donations() as $campaign_donation ) {
-				$amount  = Charitable_Currency::get_instance()->sanitize_monetary_amount( (string) $campaign_donation->amount, true );
+				$amount  = Charitable_Currency::get_instance()->sanitize_monetary_amount( (string) $campaign_donation->amount );
 				$items[] = [
 					'kind'        => 'debit',
 					'name'        => substr( $campaign_donation->campaign_name, 0, 35 ),
