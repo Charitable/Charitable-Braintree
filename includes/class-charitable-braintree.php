@@ -7,7 +7,7 @@
  * @package   Charitable Braintree
  * @copyright Copyright (c) 2020, Eric Daams
  * @license   http://opensource.org/licenses/gpl-1.0.0.php GNU Public License
- * @version   1.0.0
+ * @version   1.0.1
  * @since     1.0.0
  */
 
@@ -364,6 +364,10 @@ if ( ! class_exists( 'Charitable_Braintree' ) ) :
 		 * @return array
 		 */
 		public function disable_unavailable_recurring_donation_periods( $periods ) {
+			if ( ! charitable()->registry()->get( 'gateways' )->is_active_gateway( 'braintree' ) ) {
+				return $periods;
+			}
+
 			/* Get rid of weekly since that is not possible with Braintree. */
 			if ( array_key_exists( 'week', $periods ) ) {
 				unset( $periods['week'] );
@@ -392,6 +396,10 @@ if ( ! class_exists( 'Charitable_Braintree' ) ) :
 		 * @return array
 		 */
 		public function disable_recurring_donation_periods_for_campaign( $fields ) {
+			if ( ! charitable()->registry()->get( 'gateways' )->is_active_gateway( 'braintree' ) ) {
+				return $fields;
+			}
+
 			if ( ! array_key_exists( 'recurring_donation_period', $fields ) ) {
 				return $fields;
 			}
